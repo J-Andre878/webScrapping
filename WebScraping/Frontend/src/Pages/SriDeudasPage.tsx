@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -16,8 +16,36 @@ export function SriDeudasPage() {
   const [datos, setDatos] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [vncWindow, setVncWindow] = useState<Window | null>(null)
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>()
+
+  // Función para cerrar la ventana VNC
+  const closeVncWindow = () => {
+    if (vncWindow && !vncWindow.closed) {
+      vncWindow.close()
+      setVncWindow(null)
+    }
+  }
+
+  // useEffect para cerrar cuando termine el loading (exitoso o con error)
+  useEffect(() => {
+    if (!isLoading && vncWindow && !vncWindow.closed) {
+      // Agregar un pequeño delay para que el usuario vea el resultado antes de cerrar
+      const timer = setTimeout(() => {
+        closeVncWindow()
+      }, 2000) // 2 segundos de delay
+
+      return () => clearTimeout(timer)
+    }
+  }, [isLoading, vncWindow])
+
+  // Cleanup al desmontar el componente
+  useEffect(() => {
+    return () => {
+      closeVncWindow()
+    }
+  }, [])
 
   const onSubmit = async (data: FormData) => {
     setIsLoading(true)
@@ -84,14 +112,25 @@ export function SriDeudasPage() {
                     <div>
                       <h4 className="font-semibold text-blue-800 mb-1">Información Importante</h4>
                       <p className="text-sm text-blue-700">
-                        Esta página puede necesitar mas de un intento
+                        Esta página puede necesitar mas de un intento. La ventana de noVNC se cerrará automáticamente al finalizar.
                       </p>
                     </div>
                   </div>
                 </div>
-                <Button type="submit" className="w-full" disabled={isLoading}>
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={isLoading}
+                  onClick={() => {
+                    if (!isLoading) {
+                      const newWindow = window.open("http://localhost:6080/vnc.html", "_blank")
+                      setVncWindow(newWindow)
+                    }
+                  }}
+                >
                   {isLoading ? "Consultando..." : "Consultar"}
                 </Button>
+
               </form>
 
               {/* Mostrar resultados */}
