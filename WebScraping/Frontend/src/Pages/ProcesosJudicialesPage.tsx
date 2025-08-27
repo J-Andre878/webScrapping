@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -37,12 +37,20 @@ export function ProcesosJudicialesPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [procesosData, setProcesosData] = useState<ProcesosJudicialesData | null>(null)
   const [showCards, setShowCards] = useState(false)
+  const [vncWindow, setVncWindow] = useState<Window | null>(null)
 
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<FormData>()
+
+  useEffect(() => {
+    if (procesosData && vncWindow && !vncWindow.closed) {
+      vncWindow.close()
+      setVncWindow(null)
+    }
+  }, [procesosData, vncWindow])
 
   const onSubmit = async (data: FormData) => {
     setIsLoading(true)
@@ -299,7 +307,15 @@ export function ProcesosJudicialesPage() {
                   </div>
                 </div>
 
-                <Button type="submit" className="w-full" disabled={isLoading}>
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={isLoading}
+                  onClick={() => {
+                    const newWindow = window.open("http://localhost:6080/vnc.html", "_blank")
+                    setVncWindow(newWindow)
+                  }}
+                >
                   {isLoading ? "Consultando... (Esto puede tomar unos segundos)" : "Consultar"}
                 </Button>
               </form>
