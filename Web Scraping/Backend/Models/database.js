@@ -61,7 +61,7 @@ export const getCollection = (collectionName) => {
 // Modelos/Esquemas para las colecciones
 export const Collections = {
   ANTECEDENTES_PENALES: 'antecedentesPenales',
-  CERTIFICADOS_IESS: 'certificadosIESS',
+  DATOS_IESS: 'datosIESS',
   CITACIONES_ANT: 'citacionesANT',
   CITACIONES_JUDICIALES: 'citacionesJudiciales',
   CONSEJO_JUDICATURA: 'consejoJudicatura',
@@ -72,7 +72,8 @@ export const Collections = {
   SENESCYT: 'senescyt',
   SRI_DEUDAS: 'sri-deudas',
   SUPERCIAS_EMPRESAS: 'supercias-empresas',
-  INTERPOL: 'interpol'
+  INTERPOL: 'interpol',
+  ERROR_LOGS: 'errorLogs'
 
 }
 
@@ -222,7 +223,7 @@ export const DatabaseOperations = {
       // Índices para consultas por cédula
       const cedulaCollections = [
         Collections.ANTECEDENTES_PENALES,
-        Collections.CERTIFICADOS_IESS,
+        Collections.DATOS_IESS,
         Collections.CITACIONES_ANT,
         Collections.CITACIONES_JUDICIALES,
         Collections.PENSION_ALIMENTICIA,
@@ -236,16 +237,6 @@ export const DatabaseOperations = {
         await collection.createIndex({ fechaActualizacion: -1 })
       }
 
-      // Índices específicos para certificados IESS
-      const certificadosIESSCollection = getCollection(Collections.CERTIFICADOS_IESS)
-      await certificadosIESSCollection.createIndex({ cedula: 1 }, { unique: true })
-      await certificadosIESSCollection.createIndex({ fechaActualizacion: -1 })
-      await certificadosIESSCollection.createIndex({ registradoComoEmpleador: 1 })
-      await certificadosIESSCollection.createIndex({ estadoActividad: 1 })
-      await certificadosIESSCollection.createIndex({ estado: 1 })
-      await certificadosIESSCollection.createIndex({ error: 1 }, { sparse: true })
-      await certificadosIESSCollection.createIndex({ fechaConsulta: -1 })
-
       // Índice para RUC en datos SRI
       const sriCollection = getCollection(Collections.DATOS_SRI)
       await sriCollection.createIndex({ ruc: 1 }, { unique: true })
@@ -254,6 +245,14 @@ export const DatabaseOperations = {
       // Índice para impedimentos (no requiere cédula)
       const impedimentosCollection = getCollection(Collections.IMPEDIMENTOS_CARGOS_PUBLICOS)
       await impedimentosCollection.createIndex({ tipo: 1 }, { unique: true })
+
+      // Índices para logs de errores
+      const errorLogsCollection = getCollection(Collections.ERROR_LOGS)
+      await errorLogsCollection.createIndex({ cedula: 1 })
+      await errorLogsCollection.createIndex({ servicio: 1 })
+      await errorLogsCollection.createIndex({ tipoError: 1 })
+      await errorLogsCollection.createIndex({ fechaError: -1 })
+      await errorLogsCollection.createIndex({ timestamp: -1 })
       await impedimentosCollection.createIndex({ fechaActualizacion: -1 })
 
       // Índice para consejo de judicatura
@@ -335,57 +334,56 @@ export const AntecedentesPenalesModel = {
   }
 }
 
-export const CertificadosIESSModel = {
-  async save(cedula, datosCertificado) {
+
+export const DatosIESSModel = {
+  async save(cedula, datosIESS) {
     return await DatabaseOperations.upsert(
-      Collections.CERTIFICADOS_IESS,
+      Collections.DATOS_IESS,
       { cedula },
-      datosCertificado
+      datosIESS
     )
   },
 
   async findByCedula(cedula) {
-    return await DatabaseOperations.findByCedula(Collections.CERTIFICADOS_IESS, cedula)
+    return await DatabaseOperations.findByCedula(Collections.DATOS_IESS, cedula)
   },
 
   async getAllConsultas() {
-    const collection = getCollection(Collections.CERTIFICADOS_IESS)
+    const collection = getCollection(Collections.DATOS_IESS)
     return await collection.find({}).sort({ fechaConsulta: -1 }).toArray()
   },
 
-  async getEmpleadoresRegistrados() {
-    const collection = getCollection(Collections.CERTIFICADOS_IESS)
-    return await collection.find({ registradoComoEmpleador: true }).sort({ fechaConsulta: -1 }).toArray()
+  async getConsultasExitosas() {
+    const collection = getCollection(Collections.DATOS_IESS)
+    return await collection.find({ estado: 'exitoso' }).sort({ fechaConsulta: -1 }).toArray()
   },
 
-  async getEmpleadoresActivos() {
-    const collection = getCollection(Collections.CERTIFICADOS_IESS)
+  async getConsultasConCobertura() {
+    const collection = getCollection(Collections.DATOS_IESS)
     return await collection.find({ 
-      registradoComoEmpleador: true,
-      estadoActividad: { $regex: /activo/i }
+      estado: 'exitoso',
+      cobertura: { $exists: true, $ne: null, $ne: '' }
     }).sort({ fechaConsulta: -1 }).toArray()
   },
 
   async getEstadisticas() {
-    const collection = getCollection(Collections.CERTIFICADOS_IESS)
+    const collection = getCollection(Collections.DATOS_IESS)
     
     const totalConsultas = await collection.countDocuments()
     const consultasExitosas = await collection.countDocuments({ estado: 'exitoso' })
-    const empleadoresRegistrados = await collection.countDocuments({ registradoComoEmpleador: true })
-    const empleadoresActivos = await collection.countDocuments({ 
-      registradoComoEmpleador: true,
-      estadoActividad: { $regex: /activo/i }
+    const consultasConCobertura = await collection.countDocuments({ 
+      estado: 'exitoso',
+      cobertura: { $exists: true, $ne: null, $ne: '' }
     })
     const consultasConError = await collection.countDocuments({ error: { $exists: true } })
     
     return {
       totalConsultas,
       consultasExitosas,
-      empleadoresRegistrados,
-      empleadoresActivos,
+      consultasConCobertura,
       consultasConError,
       tasaExito: totalConsultas > 0 ? (consultasExitosas / totalConsultas * 100).toFixed(2) : 0,
-      porcentajeEmpleadores: totalConsultas > 0 ? (empleadoresRegistrados / totalConsultas * 100).toFixed(2) : 0
+      porcentajeConCobertura: consultasExitosas > 0 ? (consultasConCobertura / consultasExitosas * 100).toFixed(2) : 0
     }
   }
 }
@@ -539,6 +537,82 @@ export const SuperciasEmpresasModel = {
       personasJuridicas,
       tasaExito: totalConsultas > 0 ? (consultasExitosas / totalConsultas * 100).toFixed(2) : 0
     }
+  }
+}
+
+// Modelo para logs de errores
+export const ErrorLogsModel = {
+  async saveError(servicio, cedula, error, detalles = {}) {
+    const errorLog = {
+      servicio,          // Ej: 'datos-iess', 'antecedentes-penales', etc.
+      cedula,            // Cédula que se estaba consultando
+      tipoError: error,  // Tipo de error: 'cedula_no_registrada', 'timeout', etc.
+      detalles,          // Información adicional del error
+      fechaError: new Date(),
+      timestamp: Date.now()
+    }
+    
+    return await DatabaseOperations.insertOne(Collections.ERROR_LOGS, errorLog)
+  },
+
+  async getErrorsByCedula(cedula) {
+    const collection = getCollection(Collections.ERROR_LOGS)
+    return await collection.find({ cedula }).sort({ fechaError: -1 }).toArray()
+  },
+
+  async getErrorsByServicio(servicio) {
+    const collection = getCollection(Collections.ERROR_LOGS)
+    return await collection.find({ servicio }).sort({ fechaError: -1 }).toArray()
+  },
+
+  async getErrorsByTipo(tipoError) {
+    const collection = getCollection(Collections.ERROR_LOGS)
+    return await collection.find({ tipoError }).sort({ fechaError: -1 }).toArray()
+  },
+
+  async getAllErrors(limit = 100) {
+    const collection = getCollection(Collections.ERROR_LOGS)
+    return await collection.find({}).sort({ fechaError: -1 }).limit(limit).toArray()
+  },
+
+  async getErrorStats() {
+    const collection = getCollection(Collections.ERROR_LOGS)
+    
+    const totalErrors = await collection.countDocuments()
+    const erroresPorServicio = await collection.aggregate([
+      { $group: { _id: "$servicio", count: { $sum: 1 } } },
+      { $sort: { count: -1 } }
+    ]).toArray()
+    
+    const erroresPorTipo = await collection.aggregate([
+      { $group: { _id: "$tipoError", count: { $sum: 1 } } },
+      { $sort: { count: -1 } }
+    ]).toArray()
+    
+    const erroresUltimos7Dias = await collection.countDocuments({
+      fechaError: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }
+    })
+    
+    return {
+      totalErrors,
+      erroresPorServicio,
+      erroresPorTipo,
+      erroresUltimos7Dias
+    }
+  },
+
+  // Limpiar errores antiguos (más de X días)
+  async cleanOldErrors(daysOld = 90) {
+    const collection = getCollection(Collections.ERROR_LOGS)
+    const cutoffDate = new Date()
+    cutoffDate.setDate(cutoffDate.getDate() - daysOld)
+
+    const result = await collection.deleteMany({
+      fechaError: { $lt: cutoffDate }
+    })
+
+    console.log(`🧹 Eliminados ${result.deletedCount} logs de errores antiguos`)
+    return result
   }
 }
 

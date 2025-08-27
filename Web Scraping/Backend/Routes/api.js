@@ -2,7 +2,7 @@ import express from 'express'
 import { validateCedula, validateRuc, validateCedulaOrRuc, validateSearchParams } from '../Middleware/validation.js'
 
 // Importar controllers
-import { consultarCertificadoIESS } from '../Controllers/certificadosIESS.js'
+import { consultarDatosIESS } from '../Controllers/datosIESS.js'
 import { consultarCitacionesANT } from '../Controllers/citacionesANT.js'
 import { consultarCitacionesJudiciales } from '../Controllers/citacionJudicial.js'
 import { consultarConsejoJudicatura } from '../Controllers/consejoJudicatura.js'
@@ -15,12 +15,20 @@ import { consultarSRIDeudas } from '../Controllers/sriDeudas.js'
 import { consultarSuperciasEmpresas } from '../Controllers/superCias.js'
 import { consultarInterpol } from "../Controllers/interpol.js"
 import { consultarAntecedentesPenales } from '../Controllers/antecedentesPenales.js'
+import { 
+  obtenerTodosLosErrores, 
+  obtenerErroresPorCedula, 
+  obtenerErroresPorServicio, 
+  obtenerErroresPorTipo, 
+  obtenerEstadisticasErrores, 
+  limpiarErroresAntiguos 
+} from '../Controllers/errorLogs.js'
 
 
 const router = express.Router()
 
 // Rutas con validación y controllers
-router.post('/certificado-iess', validateCedula, consultarCertificadoIESS)
+router.post('/datos-iess', validateCedula, consultarDatosIESS)
 router.post('/citaciones-ant', validateCedula, consultarCitacionesANT)
 router.post('/citaciones-judiciales', validateCedula, consultarCitacionesJudiciales)
 router.post('/consejo-judicatura', validateSearchParams, consultarConsejoJudicatura)
@@ -33,6 +41,14 @@ router.post('/sri-deudas', validateCedulaOrRuc, consultarSRIDeudas)
 router.post('/supercias-empresas', validateCedulaOrRuc, consultarSuperciasEmpresas)
 router.post('/antecedentes-penales', validateCedula, consultarAntecedentesPenales)
 router.post('/interpol', consultarInterpol)
+
+// Rutas para logs de errores
+router.get('/error-logs', obtenerTodosLosErrores)
+router.get('/error-logs/cedula/:cedula', obtenerErroresPorCedula)
+router.get('/error-logs/servicio/:servicio', obtenerErroresPorServicio)
+router.get('/error-logs/tipo/:tipo', obtenerErroresPorTipo)
+router.get('/error-logs/stats', obtenerEstadisticasErrores)
+router.delete('/error-logs/clean', limpiarErroresAntiguos)
 
 // Ruta de estado de la API
 router.get('/health', (req, res) => {
@@ -48,7 +64,7 @@ router.get('/collections', (req, res) => {
   res.json({
     success: true,
     collections: [
-      'certificados-iess',
+      'datos-iess',
       'citaciones-ant',
       'citaciones-judiciales',
       'consejo-judicatura',

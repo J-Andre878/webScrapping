@@ -15,8 +15,8 @@ import {
 
 const menuItems = [
   {
-    title: "Certificados IESS",
-    url: "/certificado-iess",
+    title: "Datos IESS",
+    url: "/datos-iess",
     icon: FileText,
   },
   {
