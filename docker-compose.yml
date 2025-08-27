@@ -20,7 +20,7 @@ services:
 
   frontend:
     build:
-      context: "./Web Scraping/Frontend"
+      context: "./WebScraping/Frontend"
       dockerfile: Dockerfile
     container_name: web-scraping-frontend
     restart: unless-stopped
