@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -29,12 +29,20 @@ export function AntecedentesPenalesPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [antecedentesPenalesData, setAntecedentesPenalesData] = useState<AntecedentesPenalesData | null>(null)
   const [showResult, setShowResult] = useState(false)
+  const [vncWindow, setVncWindow] = useState<Window | null>(null)
 
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<FormData>()
+
+  useEffect(() => {
+    if (antecedentesPenalesData && vncWindow && !vncWindow.closed) {
+      vncWindow.close()
+      setVncWindow(null)
+    }
+  }, [antecedentesPenalesData, vncWindow])
 
   const onSubmit = async (data: FormData) => {
     setIsLoading(true)
@@ -223,7 +231,15 @@ export function AntecedentesPenalesPage() {
                     </div>
                   </div>
                 </div>
-                <Button type="submit" className="w-full" disabled={isLoading}>
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={isLoading}
+                  onClick={() => {
+                    const newWindow = window.open("http://localhost:6080/vnc.html", "_blank")
+                    setVncWindow(newWindow)
+                  }}
+                >
                   {isLoading ? "Consultando..." : "Consultar Antecedentes"}
                 </Button>
               </form>
