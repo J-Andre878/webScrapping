@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -37,12 +37,20 @@ export function ConsultaSRIPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [sriData, setSriData] = useState<ConsultaSRIData | null>(null)
   const [showCards, setShowCards] = useState(false)
+  const [vncWindow, setVncWindow] = useState<Window | null>(null)
 
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<FormData>()
+
+  useEffect(() => {
+    if (sriData && vncWindow && !vncWindow.closed) {
+      vncWindow.close()
+      setVncWindow(null)
+    }
+  }, [sriData, vncWindow])
 
   const onSubmit = async (data: FormData) => {
     setIsLoading(true)
@@ -262,7 +270,15 @@ export function ConsultaSRIPage() {
                   {errors.ruc && <p className="text-sm text-destructive">{errors.ruc.message}</p>}
                 </div>
 
-                <Button type="submit" className="w-full" disabled={isLoading}>
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={isLoading}
+                  onClick={() => {
+                    const newWindow = window.open("http://localhost:6080/vnc.html", "_blank")
+                    setVncWindow(newWindow)
+                  }}
+                >
                   {isLoading ? "Consultando..." : "Consultar"}
                 </Button>
               </form>
