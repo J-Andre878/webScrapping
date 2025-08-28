@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { SidebarTrigger } from "@/components/ui/sidebar"
-import { ResultModal } from "@/components/result-modal"
 import { Shield, AlertTriangle, CheckCircle, User, Calendar, FileText } from "lucide-react"
 
 type FormData = {
@@ -24,8 +23,7 @@ interface AntecedentesPenalesData {
 }
 
 export function AntecedentesPenalesPage() {
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [result, setResult] = useState<string>("")
+  const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [antecedentesPenalesData, setAntecedentesPenalesData] = useState<AntecedentesPenalesData | null>(null)
   const [showResult, setShowResult] = useState(false)
@@ -38,16 +36,20 @@ export function AntecedentesPenalesPage() {
   } = useForm<FormData>()
 
   useEffect(() => {
-    if (antecedentesPenalesData && vncWindow && !vncWindow.closed) {
-      vncWindow.close()
-      setVncWindow(null)
+    if (!isLoading && vncWindow && !vncWindow.closed) {
+      const timer = setTimeout(() => {
+        vncWindow.close()
+        setVncWindow(null)
+      }, 2000)
+      return () => clearTimeout(timer)
     }
-  }, [antecedentesPenalesData, vncWindow])
+  }, [isLoading, vncWindow])
 
   const onSubmit = async (data: FormData) => {
     setIsLoading(true)
     setShowResult(false)
     setAntecedentesPenalesData(null)
+    setError(null)
 
     try {
       const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ;
@@ -65,13 +67,11 @@ export function AntecedentesPenalesPage() {
         setAntecedentesPenalesData(resultado.data)
         setShowResult(true)
       } else {
-        setResult(`Error: ${resultado.error || "Error desconocido"}`)
-        setIsModalOpen(true)
+        setError(resultado.message || "Ocurrió un error, por favor intenta más tarde.")
       }
     } catch (error) {
       console.error("Error al consultar antecedentes penales:", error)
-      setResult("Error de conexión. Verifique que el servidor backend esté funcionando.")
-      setIsModalOpen(true)
+      setError("Error de conexión con el servidor")
     } finally {
       setIsLoading(false)
     }
@@ -87,7 +87,6 @@ export function AntecedentesPenalesPage() {
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
-          {/* Estado del resultado */}
           <div className="flex items-center justify-center p-6 rounded-lg border-2 border-dashed">
             {data.tieneAntecedentes ? (
               <div className="text-center space-y-2">
@@ -103,8 +102,6 @@ export function AntecedentesPenalesPage() {
               </div>
             )}
           </div>
-
-          {/* Información personal */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-4">
               <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
@@ -114,7 +111,6 @@ export function AntecedentesPenalesPage() {
                   <div className="font-semibold">{data.nombre}</div>
                 </div>
               </div>
-
               <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
                 <FileText className="h-5 w-5 text-gray-600" />
                 <div>
@@ -123,7 +119,6 @@ export function AntecedentesPenalesPage() {
                 </div>
               </div>
             </div>
-
             <div className="space-y-4">
               <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
                 <Calendar className="h-5 w-5 text-gray-600" />
@@ -140,7 +135,6 @@ export function AntecedentesPenalesPage() {
                   </div>
                 </div>
               </div>
-
               <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
                 <Shield className="h-5 w-5 text-gray-600" />
                 <div>
@@ -150,8 +144,6 @@ export function AntecedentesPenalesPage() {
               </div>
             </div>
           </div>
-
-          {/* Información adicional */}
           <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <div className="text-sm text-blue-800">
               <strong>Información importante:</strong> Este certificado es válido únicamente para el momento de su consulta. 
@@ -159,8 +151,6 @@ export function AntecedentesPenalesPage() {
               se recomienda obtener un certificado oficial del Ministerio del Interior.
             </div>
           </div>
-
-          {/* Resultado detallado */}
           <div className={`p-4 rounded-lg border ${
             data.tieneAntecedentes 
               ? 'bg-red-50 border-red-200' 
@@ -225,8 +215,7 @@ export function AntecedentesPenalesPage() {
                     <div>
                       <h4 className="font-semibold text-yellow-800 mb-1">Tiempo de Procesamiento</h4>
                       <p className="text-sm text-yellow-700">
-                        Esta consulta puede tomar varios segundos debido al procesamiento 
-                        automático del captcha requerido por el sitio web.
+                        Esta consulta puede tomar varios segundos.
                       </p>
                     </div>
                   </div>
@@ -246,18 +235,18 @@ export function AntecedentesPenalesPage() {
             </CardContent>
           </Card>
 
+          {/* Mostrar mensaje de error debajo del formulario */}
+          {error && (
+            <div className="mt-4 text-red-600 font-semibold">
+              {error}
+            </div>
+          )}
+
           {showResult && antecedentesPenalesData && (
             <ResultCard data={antecedentesPenalesData} />
           )}
         </div>
       </div>
-
-      <ResultModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title="Error en Consulta - Antecedentes Penales"
-        result={result}
-      />
     </div>
   )
 }

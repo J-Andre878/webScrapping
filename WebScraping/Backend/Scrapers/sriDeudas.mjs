@@ -11,7 +11,72 @@ export const obtenerSRIdeudas = async (ruc) => {
 
     await page.waitForSelector('#busquedaRucId', { timeout: 0 })
     await page.fill('#busquedaRucId', ruc)
-    await page.click('.ui-button-secondary')
+    
+    console.log(`📝 RUC/Cédula ingresada: ${ruc}`)
+
+    // Esperar un momento para que aparezca el mensaje de error o se habilite el botón
+    await page.waitForTimeout(2000)
+
+    // Verificar si aparece el mensaje de "La búsqueda no generó resultados"
+    const mensajeError = await page.locator('.ui-messages-warn .ui-messages-detail').first()
+    const existeMensajeError = await mensajeError.count() > 0
+
+    if (existeMensajeError) {
+      console.log('⚠️ Detectado mensaje: La búsqueda no generó resultados')
+      
+      // Obtener el texto del mensaje
+      const textoMensaje = await mensajeError.textContent()
+      console.log(`📄 Mensaje obtenido: ${textoMensaje}`)
+
+      // Preparar resultado con el mensaje de error
+      const resultado = {
+        ruc: ruc.trim(),
+        rucObtenida: ruc.trim(),
+        fechaCorte: '',
+        razonSocial: '',
+        estadoDeuda: textoMensaje?.trim() || 'La búsqueda no generó resultados',
+        fechaConsulta: new Date(),
+        tipoResultado: 'sin_resultados'
+      }
+
+      console.log(`📊 Resultado (sin resultados):`, {
+        ruc: resultado.ruc,
+        estadoDeuda: resultado.estadoDeuda,
+        tipoResultado: resultado.tipoResultado
+      })
+
+      // Guardar en base de datos
+      await DatabaseOperations.upsert(
+        Collections.SRI_DEUDAS,
+        { ruc: resultado.ruc },
+        resultado
+      )
+
+      console.log(`💾 Datos de "sin resultados" guardados exitosamente en BD`)
+
+      return { 
+        success: true, 
+        data: resultado, 
+        estado: 'sin_resultados',
+        mensaje: 'La búsqueda no generó resultados'
+      }
+    }
+
+    // Si no hay mensaje de error, continuar con el flujo normal
+    console.log('✅ No se detectó mensaje de error, continuando con flujo normal')
+    
+    // Verificar que el botón esté habilitado
+    const botonConsultar = page.locator('.ui-button.cyan-btn')
+    const botonHabilitado = await botonConsultar.isEnabled()
+    
+    if (!botonHabilitado) {
+      console.log('⚠️ El botón consultar no está habilitado')
+      throw new Error('El botón consultar no está habilitado')
+    }
+
+    // Hacer clic en el botón consultar
+    await botonConsultar.click()
+    console.log('🔘 Botón consultar presionado')
 
     // Esperar a que aparezcan los datos básicos de la consulta
     await page.waitForSelector('span.titulo-consultas-1.tamano-defecto-campos', { timeout: 0 })
@@ -116,13 +181,15 @@ export const obtenerSRIdeudas = async (ruc) => {
       fechaCorte,
       razonSocial,
       estadoDeuda,
-      fechaConsulta: new Date()
+      fechaConsulta: new Date(),
+      tipoResultado: 'exitoso'
     }
 
     console.log(`📊 Resultado final:`, {
       ruc: resultado.ruc,
       estadoDeuda: resultado.estadoDeuda,
-      razonSocial: resultado.razonSocial
+      razonSocial: resultado.razonSocial,
+      tipoResultado: resultado.tipoResultado
     })
 
     // Guardar/actualizar en DB
@@ -134,7 +201,11 @@ export const obtenerSRIdeudas = async (ruc) => {
 
     console.log(`💾 Datos guardados exitosamente en BD`)
 
-    return { success: true, data: resultado, estado: 'exitoso' }
+    return { 
+      success: true, 
+      data: resultado, 
+      estado: 'exitoso'
+    }
 
   } catch (error) {
     console.error('❌ Error en obtenerSRIdeudas:', error.message)

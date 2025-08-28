@@ -18,7 +18,7 @@ export const consultarAntecedentesPenales = async (req, res) => {
     console.error('Error en consultarAntecedentesPenales:', error)
     res.status(500).json({
       success: false,
-      error: error.message || 'Error interno del servidor'
+      message: 'Ocurrió un error al hacer scraping'
     })
   }
 }

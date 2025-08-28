@@ -15,10 +15,10 @@ export const consultarSenescyt = async (req, res) => {
     })
     
   } catch (error) {
-    console.error('❌ Error en consultarSenescyt:', error)
-    res.status(500).json({
-      success: false,
-      error: error.message || 'Error interno del servidor'
-    })
+      console.error('❌ Error en consultarSenescyt:', error)
+      res.status(500).json({
+        success: false,
+        message: 'Ocurrió un error al hacer scraping'
+      })
   }
 }

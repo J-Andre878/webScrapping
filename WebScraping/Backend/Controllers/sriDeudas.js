@@ -16,7 +16,7 @@ export const consultarSRIDeudas = async (req, res) => {
     console.error('Error en consultarSRIDeudas:', error)
     return res.status(500).json({
       success: false,
-      error: error.message || 'Error interno del servidor'
+      message: 'Ocurrió un error al hacer scraping'
     })
   }
 }
