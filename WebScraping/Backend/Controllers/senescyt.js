@@ -18,7 +18,7 @@ export const consultarSenescyt = async (req, res) => {
       console.error('❌ Error en consultarSenescyt:', error)
       res.status(500).json({
         success: false,
-        message: 'Ocurrió un error al hacer scraping'
+        message: 'Ocurrió un error, por favor intenta más tarde.'
       })
   }
 }

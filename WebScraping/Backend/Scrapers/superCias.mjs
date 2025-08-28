@@ -17,7 +17,7 @@ export const obtenerSuperciasEmpresas = async (cedulaRuc) => {
   try {
     console.log(`🔍 Iniciando consulta de Superintendencia de Compañías para: ${cedulaRuc}`);
 
-    browser = await chromium.launch({ headless: true });
+    browser = await chromium.launch({ headless: false });
     const context = await browser.newContext();
     const page = await context.newPage();
 

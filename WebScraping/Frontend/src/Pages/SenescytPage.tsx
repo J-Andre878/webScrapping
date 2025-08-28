@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { SidebarTrigger } from "@/components/ui/sidebar"
-import { ResultModal } from "@/components/result-modal"
 
 type FormData = {
   cedula: string
@@ -28,11 +27,11 @@ interface SenescytData {
 }
 
 export function SenescytPage() {
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [result, setResult] = useState<string>("")
+  const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [senescytData, setSenescytData] = useState<SenescytData | null>(null)
   const [showCards, setShowCards] = useState(false)
+  const [noResults, setNoResults] = useState(false)
 
   const {
     register,
@@ -44,6 +43,8 @@ export function SenescytPage() {
     setIsLoading(true)
     setShowCards(false)
     setSenescytData(null)
+    setError(null)
+    setNoResults(false)
 
     try {
       const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ;
@@ -70,17 +71,14 @@ export function SenescytPage() {
           })
           setShowCards(true)
         } else {
-          setResult(`No se encontraron títulos académicos registrados para la cédula ${data.cedula} en Senescyt.`)
-          setIsModalOpen(true)
+          setNoResults(true)
         }
       } else {
-        setResult(`Error: ${resultado.error || "Error desconocido"}`)
-        setIsModalOpen(true)
+        setError(resultado.message || "Ocurrió un error, por favor intenta más tarde.")
       }
     } catch (error) {
       console.error("Error al consultar Senescyt:", error)
-      setResult("Error de conexión. Verifique que el servidor backend esté funcionando.")
-      setIsModalOpen(true)
+      setError("Error de conexión con el servidor")
     } finally {
       setIsLoading(false)
     }
@@ -343,15 +341,34 @@ export function SenescytPage() {
               </Card>
             </div>
           )}
+
+          {/* Mostrar mensaje de error */}
+          {error && (
+            <div className="mt-4 text-red-600 font-semibold">
+              {error}
+            </div>
+          )}
+
+          {/* Mostrar mensaje cuando no hay resultados */}
+          {noResults && (
+            <div className="mt-6">
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="text-center py-8">
+                    <div className="text-6xl mb-4">📚</div>
+                    <h3 className="text-lg font-semibold text-gray-700 mb-2">
+                      No se encontraron títulos académicos
+                    </h3>
+                    <p className="text-gray-500">
+                      No se encontraron títulos académicos registrados para esta cédula en Senescyt.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </div>
       </div>
-
-      <ResultModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title="Resultado de Consulta - Senescyt"
-        result={result}
-      />
     </div>
   )
 }

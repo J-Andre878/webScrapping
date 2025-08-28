@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { SidebarTrigger } from "@/components/ui/sidebar"
-import { ResultModal } from "@/components/result-modal"
 import { Building2, User, Calendar, FileText, Table, TrendingUp } from "lucide-react"
 
 type FormData = {
@@ -32,11 +31,11 @@ interface SuperciasData {
 }
 
 export function SuperCiasPage() {
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [result, setResult] = useState<string>("")
+  const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [superciasData, setSuperciasData] = useState<SuperciasData | null>(null)
   const [showResult, setShowResult] = useState(false)
+  const [noResults, setNoResults] = useState(false)
   const [selectedTable, setSelectedTable] = useState<number | null>(null)
 
   const {
@@ -50,6 +49,8 @@ export function SuperCiasPage() {
     setShowResult(false)
     setSuperciasData(null)
     setSelectedTable(null)
+    setError(null)
+    setNoResults(false)
 
     try {
       const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ;
@@ -66,20 +67,17 @@ export function SuperCiasPage() {
       if (resultado.success) {
         // ✅ Verificar si no está registrado
         if (resultado.data.estado === 'no_registrado') {
-          setResult(resultado.data.mensaje || "No se encontraron registros en la Superintendencia de Compañías")
-          setIsModalOpen(true)
+          setNoResults(true)
         } else {
           setSuperciasData(resultado.data)
           setShowResult(true)
         }
       } else {
-        setResult(`Error: ${resultado.error || "Error desconocido"}`)
-        setIsModalOpen(true)
+        setError(resultado.message || "Ocurrió un error, por favor intenta más tarde.")
       }
     } catch (error) {
       console.error("Error al consultar Superintendencia de Compañías:", error)
-      setResult("Error de conexión. Verifique que el servidor backend esté funcionando.")
-      setIsModalOpen(true)
+      setError("Error de conexión con el servidor")
     } finally {
       setIsLoading(false)
     }
@@ -319,15 +317,34 @@ export function SuperCiasPage() {
           {showResult && superciasData && (
             <ResultCard data={superciasData} />
           )}
+
+          {/* Mostrar mensaje de error */}
+          {error && (
+            <div className="mt-4 text-red-600 font-semibold">
+              {error}
+            </div>
+          )}
+
+          {/* Mostrar mensaje cuando no hay resultados */}
+          {noResults && (
+            <div className="mt-6">
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="text-center py-8">
+                    <div className="text-6xl mb-4">🏢</div>
+                    <h3 className="text-lg font-semibold text-gray-700 mb-2">
+                      No se encontraron registros
+                    </h3>
+                    <p className="text-gray-500">
+                      No se encontraron registros en la Superintendencia de Compañías para este RUC.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </div>
       </div>
-
-      <ResultModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title="Error en Consulta - Superintendencia de Compañías"
-        result={result}
-      />
     </div>
   )
 }
