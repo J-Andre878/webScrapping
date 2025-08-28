@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { SidebarTrigger } from "@/components/ui/sidebar"
-import { ResultModal } from "@/components/result-modal"
 
 type FormData = {
   cedula: string
@@ -35,8 +34,8 @@ interface CitacionesJudicialesData {
 }
 
 export function CitacionJudicialPage() {
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [result, setResult] = useState<string>("")
+  const [error, setError] = useState<string>("")
+  const [noResults, setNoResults] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [citacionesData, setCitacionesData] = useState<CitacionesJudicialesData | null>(null)
   const [showCards, setShowCards] = useState(false)
@@ -51,6 +50,8 @@ export function CitacionJudicialPage() {
     setIsLoading(true)
     setShowCards(false)
     setCitacionesData(null)
+    setError("")
+    setNoResults(false)
 
     try {
       const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ;
@@ -75,17 +76,14 @@ export function CitacionJudicialPage() {
           })
           setShowCards(true)
         } else {
-          setResult("No se encontraron citaciones judiciales para esta cédula.")
-          setIsModalOpen(true)
+          setNoResults(true)
         }
       } else {
-        setResult(`Error: ${resultado.error || "Error desconocido"}`)
-        setIsModalOpen(true)
+        setError("Ocurrió un error al hacer scraping")
       }
     } catch (error) {
       console.error("Error al consultar citaciones judiciales:", error)
-      setResult("Error de conexión. Verifique que el servidor backend esté funcionando.")
-      setIsModalOpen(true)
+      setError("Ocurrió un error al hacer scraping")
     } finally {
       setIsLoading(false)
     }
@@ -249,15 +247,34 @@ export function CitacionJudicialPage() {
               <CitacionesCards citaciones={citacionesData.citaciones} />
             </div>
           )}
+
+          {/* Mostrar mensaje de error */}
+          {error && (
+            <div className="mt-4 text-red-600 font-semibold">
+              {error}
+            </div>
+          )}
+
+          {/* Mostrar mensaje cuando no hay resultados */}
+          {noResults && (
+            <div className="mt-6">
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="text-center py-8">
+                    <div className="text-6xl mb-4">⚖️</div>
+                    <h3 className="text-lg font-semibold text-gray-700 mb-2">
+                      No se encontraron citaciones
+                    </h3>
+                    <p className="text-gray-500">
+                      No se encontraron citaciones judiciales para la cédula consultada.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </div>
       </div>
-
-      <ResultModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title="Resultado de Consulta - Citación Judicial"
-        result={result}
-      />
     </div>
   )
 }

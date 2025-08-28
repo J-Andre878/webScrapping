@@ -142,7 +142,7 @@ export const consultarDatosIESS = async (req, res) => {
     
     res.status(500).json({
       success: false,
-      error: error.message || 'Error interno del servidor'
+      error: 'Ocurrió un error al hacer scraping'
     })
   }
 }

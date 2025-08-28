@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { SidebarTrigger } from "@/components/ui/sidebar"
-import { ResultModal } from "@/components/result-modal"
 
 type FormData = {
   ruc: string
@@ -32,8 +31,8 @@ interface ConsultaSRIData {
 }
 
 export function ConsultaSRIPage() {
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [result, setResult] = useState<string>("")
+  const [error, setError] = useState<string>("")
+  const [noResults, setNoResults] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [sriData, setSriData] = useState<ConsultaSRIData | null>(null)
   const [showCards, setShowCards] = useState(false)
@@ -45,17 +44,39 @@ export function ConsultaSRIPage() {
     formState: { errors },
   } = useForm<FormData>()
 
-  useEffect(() => {
-    if (sriData && vncWindow && !vncWindow.closed) {
+  // Función para cerrar la ventana VNC
+  const closeVncWindow = () => {
+    if (vncWindow && !vncWindow.closed) {
       vncWindow.close()
       setVncWindow(null)
     }
-  }, [sriData, vncWindow])
+  }
+
+  // useEffect para cerrar cuando termine el loading (exitoso o con error)
+  useEffect(() => {
+    if (!isLoading && vncWindow && !vncWindow.closed) {
+      // Agregar un pequeño delay para que el usuario vea el resultado antes de cerrar
+      const timer = setTimeout(() => {
+        closeVncWindow()
+      }, 2000) // 2 segundos de delay
+
+      return () => clearTimeout(timer)
+    }
+  }, [isLoading, vncWindow])
+
+  // Cleanup al desmontar el componente
+  useEffect(() => {
+    return () => {
+      closeVncWindow()
+    }
+  }, [])
 
   const onSubmit = async (data: FormData) => {
     setIsLoading(true)
     setShowCards(false)
     setSriData(null)
+    setError("")
+    setNoResults(false)
 
     try {
       const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ;
@@ -81,17 +102,14 @@ export function ConsultaSRIPage() {
           })
           setShowCards(true)
         } else {
-          setResult(`No se encontraron datos para el RUC ${data.ruc} en el sistema del SRI.`)
-          setIsModalOpen(true)
+          setNoResults(true)
         }
       } else {
-        setResult(`Error: ${resultado.error || "Error desconocido"}`)
-        setIsModalOpen(true)
+        setError("Ocurrió un error al hacer scraping")
       }
     } catch (error) {
       console.error("Error al consultar SRI:", error)
-      setResult("Error de conexión. Verifique que el servidor backend esté funcionando.")
-      setIsModalOpen(true)
+      setError("Ocurrió un error al hacer scraping")
     } finally {
       setIsLoading(false)
     }
@@ -326,15 +344,34 @@ export function ConsultaSRIPage() {
               )}
             </div>
           )}
+
+          {/* Mostrar mensaje de error */}
+          {error && (
+            <div className="mt-4 text-red-600 font-semibold">
+              {error}
+            </div>
+          )}
+
+          {/* Mostrar mensaje cuando no hay resultados */}
+          {noResults && (
+            <div className="mt-6">
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="text-center py-8">
+                    <div className="text-6xl mb-4">🏢</div>
+                    <h3 className="text-lg font-semibold text-gray-700 mb-2">
+                      No se encontraron datos
+                    </h3>
+                    <p className="text-gray-500">
+                      No se encontraron datos para el RUC consultado en el sistema del SRI.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </div>
       </div>
-
-      <ResultModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title="Resultado de Consulta - SRI"
-        result={result}
-      />
     </div>
   )
 }

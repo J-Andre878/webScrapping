@@ -18,7 +18,7 @@ export const consultarCitacionesANT = async (req, res) => {
     console.error('❌ Error en consultarCitacionesANT:', error)
     res.status(500).json({
       success: false,
-      error: error.message || 'Error interno del servidor'
+      error: 'Ocurrió un error al hacer scraping'
     })
   }
 }

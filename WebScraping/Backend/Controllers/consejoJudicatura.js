@@ -23,7 +23,7 @@ export const consultarConsejoJudicatura = async (req, res) => {
     console.error('❌ Error en consultarConsejoJudicatura:', error)
     res.status(500).json({
       success: false,
-      error: error.message || 'Error interno del servidor'
+      error: 'Ocurrió un error al hacer scraping'
     })
   }
 }

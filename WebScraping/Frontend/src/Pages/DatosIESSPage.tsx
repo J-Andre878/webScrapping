@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { SidebarTrigger } from "@/components/ui/sidebar"
-import { ResultModal } from "@/components/result-modal"
 
 type FormData = {
   cedula: string
@@ -22,8 +21,8 @@ interface DatosIESSData {
 }
 
 export function DatosIESSPage() {
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [result, setResult] = useState<string>("")
+  const [error, setError] = useState<string>("")
+  const [noResults, setNoResults] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [datosIESS, setDatosIESS] = useState<DatosIESSData | null>(null)
   const [showCards, setShowCards] = useState(false)
@@ -38,6 +37,8 @@ export function DatosIESSPage() {
     setIsLoading(true)
     setShowCards(false)
     setDatosIESS(null)
+    setError("")
+    setNoResults(false)
 
     try {
       const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
@@ -57,34 +58,17 @@ export function DatosIESSPage() {
         const datos = resultado.data
 
         if (datos.error) {
-          let mensajeError = ""
-          switch (datos.error) {
-            case 'cedula_invalida':
-              mensajeError = `La cédula ${data.cedula} es inválida o no está registrada en el IESS.`
-              break
-            case 'cedula_no_registrada':
-              mensajeError = `Cédula No se Encuentra Registrada en el IESS.`
-              break
-            case 'timeout':
-              mensajeError = "La consulta tardó demasiado tiempo. Inténtelo nuevamente."
-              break
-            default:
-              mensajeError = `Error: ${datos.error}`
-          }
-          setResult(mensajeError)
-          setIsModalOpen(true)
+          setNoResults(true)
         } else {
           setDatosIESS(datos)
           setShowCards(true)
         }
       } else {
-        setResult(`Error: ${resultado.error || "Error desconocido"}`)
-        setIsModalOpen(true)
+        setError("Ocurrió un error al hacer scraping")
       }
     } catch (error) {
       console.error("Error al consultar datos IESS:", error)
-      setResult("Error de conexión. Verifique que el servidor backend esté funcionando.")
-      setIsModalOpen(true)
+      setError("Ocurrió un error al hacer scraping")
     } finally {
       setIsLoading(false)
     }
@@ -289,15 +273,34 @@ export function DatosIESSPage() {
               </Card>
             </div>
           )}
+
+          {/* Mostrar mensaje de error */}
+          {error && (
+            <div className="mt-4 text-red-600 font-semibold">
+              {error}
+            </div>
+          )}
+
+          {/* Mostrar mensaje cuando no hay resultados */}
+          {noResults && (
+            <div className="mt-6">
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="text-center py-8">
+                    <div className="text-6xl mb-4">🏥</div>
+                    <h3 className="text-lg font-semibold text-gray-700 mb-2">
+                      Cédula no registrada
+                    </h3>
+                    <p className="text-gray-500">
+                      La cédula no se encuentra registrada en el IESS.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </div>
       </div>
-
-      <ResultModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title="Resultado de Consulta - Datos IESS"
-        result={result}
-      />
     </div>
   )
 }

@@ -18,7 +18,7 @@ export const consultarSRI = async (req, res) => {
     console.error('❌ Error en consultarSRI:', error)
     res.status(500).json({
       success: false,
-      error: error.message || 'Error interno del servidor'
+      error: 'Ocurrió un error al hacer scraping'
     })
   }
 }
