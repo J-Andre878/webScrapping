@@ -1,5 +1,5 @@
 import { chromium } from "playwright"
-import { DatabaseOperations, Collections } from '../Models/database.js'
+import { DatabaseOperations, Collections, ErrorLogsModel } from '../Models/database.js'
 
 export const obtenerImpedimentos = async () => { 
   const browser = await chromium.launch({ headless: true })
@@ -56,6 +56,19 @@ export const obtenerImpedimentos = async () => {
 
   } catch (error) {
     console.error("\n❌ Error en obtenerImpedimentos:", error.message)
+    
+    // Guardar error en base de datos
+    await ErrorLogsModel.saveError(
+      'impedimentos-cargos-publicos',
+      'general', // No hay cédula específica en este caso
+      'error_general',
+      { 
+        mensaje: error.message || 'Error al consultar impedimentos',
+        stack: error.stack,
+        tipo: error.name || 'Error'
+      }
+    ).catch(err => console.warn('⚠️ Error guardando log:', err.message));
+    
     throw new Error(`Error al consultar impedimentos: ${error.message}`)
   } finally {
     await browser.close()

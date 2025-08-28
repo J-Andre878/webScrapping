@@ -1,6 +1,6 @@
 import { chromium } from "playwright"
 // Corregir la ruta de importación (Models con M mayúscula)
-import { DatabaseOperations, Collections } from '../Models/database.js'
+import { DatabaseOperations, Collections, ErrorLogsModel } from '../Models/database.js'
 
 export const obtenerCitaciones = async (cedula) => {
   const browser = await chromium.launch({ headless: true })
@@ -138,6 +138,19 @@ export const obtenerCitaciones = async (cedula) => {
 
   } catch (error) {
     console.error("\n❌ Error en obtenerCitaciones:", error.message)
+    
+    // Guardar error en base de datos
+    await ErrorLogsModel.saveError(
+      'citaciones-ant',
+      cedula,
+      'error_general',
+      { 
+        mensaje: error.message || 'Error al consultar citaciones ANT',
+        stack: error.stack,
+        tipo: error.name || 'Error'
+      }
+    ).catch(err => console.warn('⚠️ Error guardando log:', err.message));
+    
     throw new Error(`Error al consultar citaciones ANT: ${error.message}`)
   } finally {
     await browser.close()

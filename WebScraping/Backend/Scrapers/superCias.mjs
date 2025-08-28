@@ -1,5 +1,5 @@
 import { chromium } from 'playwright'
-import { DatabaseOperations, Collections } from '../Models/database.js'
+import { DatabaseOperations, Collections, ErrorLogsModel } from '../Models/database.js'
 
 function esPersonaNatural(ruc) {
   if (!ruc || typeof ruc !== 'string') return false;
@@ -261,6 +261,19 @@ export const obtenerSuperciasEmpresas = async (cedulaRuc) => {
       estadoError = 'no_registrado';
       console.log('⏰ Timeout detectado - probablemente no registrado');
     }
+    
+    // Guardar error en logs de errores
+    await ErrorLogsModel.saveError(
+      'supercias-empresas',
+      cedulaRuc,
+      estadoError === 'no_registrado' ? 'timeout' : 'error_general',
+      { 
+        mensaje: mensajeError,
+        stack: error.stack,
+        tipo: error.name || 'Error',
+        tipoPersona: esPersonaNatural(cedulaRuc) ? 'Persona Natural' : 'Persona Jurídica'
+      }
+    ).catch(err => console.warn('⚠️ Error guardando log:', err.message));
     
     // Guardar error en base de datos
     const datosError = {

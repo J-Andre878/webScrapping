@@ -1,5 +1,5 @@
 import { chromium } from "playwright"
-import { DatabaseOperations, Collections } from '../Models/database.js'
+import { DatabaseOperations, Collections, ErrorLogsModel } from '../Models/database.js'
 
 export const obtenerConsejoJudicatura = async (nombre, tipoBusqueda, provinciaInstitucion = null, canton = null) => {
   const browser = await chromium.launch({ headless: true })
@@ -105,6 +105,22 @@ export const obtenerConsejoJudicatura = async (nombre, tipoBusqueda, provinciaIn
 
   } catch (error) {
     console.error("\n❌ Error en obtenerConsejoJudicatura:", error.message)
+    
+    // Guardar error en base de datos
+    await ErrorLogsModel.saveError(
+      'consejo-judicatura',
+      nombre, // Usamos el nombre como identificador
+      'error_general',
+      { 
+        mensaje: error.message || 'Error al consultar Consejo de la Judicatura',
+        stack: error.stack,
+        tipo: error.name || 'Error',
+        tipoBusqueda: tipoBusqueda,
+        provinciaInstitucion: provinciaInstitucion,
+        canton: canton
+      }
+    ).catch(err => console.warn('⚠️ Error guardando log:', err.message));
+    
     throw new Error(`Error al consultar Consejo de la Judicatura: ${error.message}`)
   } finally {
     await browser.close()

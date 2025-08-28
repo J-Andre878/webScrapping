@@ -1,5 +1,5 @@
 import { chromium } from "playwright"
-import { DatabaseOperations, Collections } from '../Models/database.js'
+import { DatabaseOperations, Collections, ErrorLogsModel } from '../Models/database.js'
 
 export const obtenerCitacionesJudiciales = async (cedula) => {
   const browser = await chromium.launch({ headless: true })
@@ -108,6 +108,19 @@ export const obtenerCitacionesJudiciales = async (cedula) => {
 
   } catch (error) {
     console.error("\n❌ Error en obtenerCitacionesJudiciales:", error.message)
+    
+    // Guardar error en base de datos
+    await ErrorLogsModel.saveError(
+      'citaciones-judiciales',
+      cedula,
+      'error_general',
+      { 
+        mensaje: error.message || 'Error al consultar citaciones judiciales',
+        stack: error.stack,
+        tipo: error.name || 'Error'
+      }
+    ).catch(err => console.warn('⚠️ Error guardando log:', err.message));
+    
     throw new Error(`Error al consultar citaciones judiciales: ${error.message}`)
   } finally {
     await browser.close()

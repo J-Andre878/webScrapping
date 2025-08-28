@@ -1,5 +1,5 @@
 import { chromium } from "playwright"
-import { DatabaseOperations, Collections } from '../Models/database.js'
+import { DatabaseOperations, Collections, ErrorLogsModel } from '../Models/database.js'
 
 export const obtenerAntecedentesPenales = async (cedula) => {
   let browserVisible = null
@@ -84,6 +84,19 @@ export const obtenerAntecedentesPenales = async (cedula) => {
 
   } catch (error) {
     console.error("\nError en obtenerAntecedentesPenales:", error.message)
+    
+    // Guardar error en base de datos
+    await ErrorLogsModel.saveError(
+      'antecedentes-penales',
+      cedula,
+      'error_general',
+      { 
+        mensaje: error.message || 'Error al consultar antecedentes penales',
+        stack: error.stack,
+        tipo: error.name || 'Error'
+      }
+    ).catch(err => console.warn('⚠️ Error guardando log:', err.message));
+    
     throw new Error(`Error al consultar antecedentes penales: ${error.message}`)
   } finally {
     if (browserVisible) {

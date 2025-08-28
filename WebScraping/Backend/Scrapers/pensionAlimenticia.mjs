@@ -1,5 +1,5 @@
 import { chromium } from "playwright"
-import { DatabaseOperations, Collections } from '../Models/database.js'
+import { DatabaseOperations, Collections, ErrorLogsModel } from '../Models/database.js'
 
 export const obtenerPensiones = async (cedula) => {
   const browser = await chromium.launch({ headless: true })
@@ -89,6 +89,19 @@ export const obtenerPensiones = async (cedula) => {
 
   } catch (error) {
     console.error("\n❌ Error en obtenerPensiones:", error.message)
+    
+    // Guardar error en base de datos
+    await ErrorLogsModel.saveError(
+      'pension-alimenticia',
+      cedula,
+      'error_general',
+      { 
+        mensaje: error.message || 'Error al consultar pensiones alimenticias',
+        stack: error.stack,
+        tipo: error.name || 'Error'
+      }
+    ).catch(err => console.warn('⚠️ Error guardando log:', err.message));
+    
     throw new Error(`Error al consultar pensiones alimenticias: ${error.message}`)
   } finally {
     await browser.close()

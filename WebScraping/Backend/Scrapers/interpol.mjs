@@ -1,5 +1,5 @@
 import { chromium } from "playwright";
-import { DatabaseOperations, Collections } from '../Models/database.js';
+import { DatabaseOperations, Collections, ErrorLogsModel } from '../Models/database.js';
 
 export const obtenerDatosInterpol = async (nombre, apellido = '') => {
   const browser = await chromium.launch({
@@ -245,6 +245,24 @@ export const obtenerDatosInterpol = async (nombre, apellido = '') => {
 
   } catch (err) {
     console.error("Error en el scraping Interpol:", err);
+    
+    // Preparar clave de búsqueda para el log de error
+    const claveBusqueda = `${nombre.trim()} ${apellido.trim()}`.trim();
+    
+    // Guardar error en base de datos
+    await ErrorLogsModel.saveError(
+      'interpol',
+      claveBusqueda,  // Usamos la clave de búsqueda como identificador
+      'error_general',
+      { 
+        mensaje: err.message || 'Error en el scraping Interpol',
+        stack: err.stack,
+        tipo: err.name || 'Error',
+        nombre: nombre,
+        apellido: apellido
+      }
+    ).catch(dbErr => console.warn('⚠️ Error guardando log:', dbErr.message));
+    
     throw err;
   } finally {
     console.log("🔄 Cerrando navegador...");

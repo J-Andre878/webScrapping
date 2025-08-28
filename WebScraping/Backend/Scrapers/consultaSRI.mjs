@@ -1,5 +1,5 @@
 import { chromium } from "playwright"
-import { DatabaseOperations, Collections } from '../Models/database.js'
+import { DatabaseOperations, Collections, ErrorLogsModel } from '../Models/database.js'
 
 export const obtenerDatosRuc = async (ruc) => {
   const browser = await chromium.launch({ headless: false })
@@ -108,6 +108,19 @@ export const obtenerDatosRuc = async (ruc) => {
 
   } catch (error) {
     console.error("\n❌ Error en obtenerDatosRuc:", error.message)
+    
+    // Guardar error en base de datos
+    await ErrorLogsModel.saveError(
+      'consulta-sri',
+      ruc,  // Usamos RUC en lugar de cédula
+      'error_general',
+      { 
+        mensaje: error.message || 'Error al consultar SRI',
+        stack: error.stack,
+        tipo: error.name || 'Error'
+      }
+    ).catch(err => console.warn('⚠️ Error guardando log:', err.message));
+    
     throw new Error(`Error al consultar SRI: ${error.message}`)
   } finally {
     await browser.close()

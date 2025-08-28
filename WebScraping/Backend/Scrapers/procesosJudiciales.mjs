@@ -1,5 +1,5 @@
 import { chromium } from "playwright"
-import { DatabaseOperations, Collections } from '../Models/database.js'
+import { DatabaseOperations, Collections, ErrorLogsModel } from '../Models/database.js'
 
 export const obtenerProcesos = async (cedula) => {
   const browser = await chromium.launch({ headless: false })
@@ -91,6 +91,19 @@ export const obtenerProcesos = async (cedula) => {
 
   } catch (error) {
     console.error("\n❌ Error en obtenerProcesos:", error.message)
+    
+    // Guardar error en base de datos
+    await ErrorLogsModel.saveError(
+      'procesos-judiciales',
+      cedula,
+      'error_general',
+      { 
+        mensaje: error.message || 'Error al consultar procesos judiciales',
+        stack: error.stack,
+        tipo: error.name || 'Error'
+      }
+    ).catch(err => console.warn('⚠️ Error guardando log:', err.message));
+    
     throw new Error(`Error al consultar procesos judiciales: ${error.message}`)
   } finally {
     await browser.close()

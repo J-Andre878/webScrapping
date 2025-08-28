@@ -4,7 +4,7 @@ import sharp from 'sharp'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
-import { DatabaseOperations, Collections } from '../Models/database.js'
+import { DatabaseOperations, Collections, ErrorLogsModel } from '../Models/database.js'
 
 // Obtener directorio actual para ES modules
 const __filename = fileURLToPath(import.meta.url)
@@ -132,6 +132,19 @@ export const obtenerDatos = async (cedula) => {
     
   } catch (error) {
     console.error("\n❌ Error en obtenerDatos:", error.message)
+    
+    // Guardar error en base de datos
+    await ErrorLogsModel.saveError(
+      'senescyt',
+      cedula,
+      'error_general',
+      { 
+        mensaje: error.message || 'Error al consultar SENESCYT',
+        stack: error.stack,
+        tipo: error.name || 'Error'
+      }
+    ).catch(err => console.warn('⚠️ Error guardando log:', err.message));
+    
     throw new Error(`Error al consultar SENESCYT: ${error.message}`)
   } finally {
     await browser.close()
