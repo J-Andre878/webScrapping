@@ -14,11 +14,12 @@ Proyecto que realiza Web scrapping de paginas como la senecyt, SUPA, Sercop, etc
 ## Instalación
 1. Clonar el repositorio de github: https://github.com/J-Andre878/webScrapping.git
 E instalar dependencias del backend
+```
 cd /webScrapping/WebScraping/Backend
 npm install
+```
 
-
-2. Instalar dependecias necesarias en el servidor de Ubuntu
+3. Instalar dependecias necesarias en el servidor de Ubuntu
 ```
 sudo apt update
 sudo apt install -y xvfb x11vnc fluxbox wget git
@@ -29,7 +30,7 @@ git clone https://github.com/novnc/noVNC.git
 sudo nano /etc/systemd/system/webscraping.service
 ```
 Y pegar el siguiente codigo, ajustando las rutas
-```
+
 [Unit]
 Description=Webscraping con Playwright + VNC + noVNC
 After=network.target
@@ -62,7 +63,6 @@ RestartSec=5
 
 [Install]
 WantedBy=multi-user.target
-```
 
 4. Habilitar el servicio
 ```
