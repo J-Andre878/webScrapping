@@ -19,10 +19,11 @@ npm install
 
 
 2. Instalar dependecias necesarias en el servidor de Ubuntu
+´´´
 sudo apt update
 sudo apt install -y xvfb x11vnc fluxbox wget git
 git clone https://github.com/novnc/noVNC.git
-
+´´´
 3. Crear el archivo para que funcione el servicio del backend
 sudo nano /etc/systemd/system/webscraping.service
 
