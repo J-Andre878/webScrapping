@@ -29,7 +29,7 @@ git clone https://github.com/novnc/noVNC.git
 sudo nano /etc/systemd/system/webscraping.service
 ```
 Y pegar el siguiente codigo, ajustando las rutas
-
+```
 [Unit]
 Description=Webscraping con Playwright + VNC + noVNC
 After=network.target
@@ -62,7 +62,7 @@ RestartSec=5
 
 [Install]
 WantedBy=multi-user.target
-
+```
 
 4. Habilitar el servicio
 ```
