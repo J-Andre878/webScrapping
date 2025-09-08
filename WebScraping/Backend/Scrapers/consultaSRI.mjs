@@ -2,24 +2,45 @@ import { chromium } from "playwright"
 import { DatabaseOperations, Collections, ErrorLogsModel } from '../Models/database.js'
 
 export const obtenerDatosRuc = async (ruc) => {
-  const browser = await chromium.launch({ headless: false })
+  console.log(`🔍 Iniciando consulta SRI para RUC: ${ruc}`)
+  
+  const browser = await chromium.launch({ 
+    headless: false,  // Manteniendo headless: false como estaba originalmente
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-gpu'
+    ]
+  })
   const page = await browser.newPage()
 
   try {
+    console.log(`🌐 Navegando a página del SRI...`)
     await page.goto("https://srienlinea.sri.gob.ec/sri-en-linea/SriRucWeb/ConsultaRuc/Consultas/consultaRuc", {
-      waitUntil: "domcontentloaded"
+      waitUntil: "domcontentloaded",
+      timeout: 30000
     })
+    
+    console.log(`📄 Página cargada. Título: ${await page.title()}`)
 
+    console.log(`📝 Ingresando RUC: ${ruc}`)
     // Rellenamos el campo de RUC
     await page.type('input[formcontrolname="inputRuc"]', ruc)
+    
+    console.log(`🔍 Haciendo clic en buscar...`)
     // Se le da click al botón de buscar
     await page.click('.ui-button.ui-widget.ui-state-default.ui-corner-all.ui-button-text-only.cyan-btn')
     
+    console.log(`⏳ Esperando resultados del contribuyente...`)
     //Espera hasta que aparezca la etiqueta que tiene la clase row
     await page.waitForSelector("sri-mostrar-contribuyente", { timeout: 60000 })
     await page.click(".ui-button.cyan-btn.ui-widget.ui-state-default.ui-corner-all.ui-button-text-only")
+    
+    console.log(`⏳ Esperando información de establecimientos...`)
     await page.waitForSelector("sri-listar-establecimientos", { timeout: 60000 })
 
+    console.log(`📊 Extrayendo datos del contribuyente...`)
     // Se extraen los datos del RUC
     const datosContribuyente = await page.$$eval("sri-mostrar-contribuyente", (elementos) => {
       return elementos.map((el) => {

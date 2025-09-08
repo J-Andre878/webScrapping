@@ -2,14 +2,29 @@ import { chromium } from 'playwright'
 import { DatabaseOperations, Collections, ErrorLogsModel } from '../Models/database.js'
 
 export const obtenerSRIdeudas = async (ruc) => {
-  const browser = await chromium.launch({ headless: false })
+  console.log(`🔍 Iniciando consulta de deudas SRI para RUC/Cédula: ${ruc}`)
+  
+  const browser = await chromium.launch({ 
+    headless: false,  // Manteniendo headless: false como estaba
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-gpu'
+    ]
+  })
   const page = await browser.newPage()
+  
   try {
+    console.log(`🌐 Navegando a página de deudas SRI...`)
     await page.goto('https://srienlinea.sri.gob.ec/sri-en-linea/SriPagosWeb/ConsultaDeudasFirmesImpugnadas/Consultas/consultaDeudasFirmesImpugnadas', {
-      waitUntil: 'domcontentloaded'
+      waitUntil: 'domcontentloaded',
+      timeout: 30000
     })
 
-    await page.waitForSelector('#busquedaRucId', { timeout: 0 })
+    console.log(`📄 Página cargada. Título: ${await page.title()}`)
+    
+    await page.waitForSelector('#busquedaRucId', { timeout: 60000 })
     await page.fill('#busquedaRucId', ruc)
     
     console.log(`📝 RUC/Cédula ingresada: ${ruc}`)

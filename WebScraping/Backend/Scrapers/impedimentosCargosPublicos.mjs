@@ -2,14 +2,29 @@ import { chromium } from "playwright"
 import { DatabaseOperations, Collections, ErrorLogsModel } from '../Models/database.js'
 
 export const obtenerImpedimentos = async () => { 
-  const browser = await chromium.launch({ headless: true })
+  console.log(`🔍 Iniciando consulta de impedimentos para cargos públicos`)
+  
+  const browser = await chromium.launch({ 
+    headless: true,
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-gpu'
+    ]
+  })
   const page = await browser.newPage()
 
   try {
+    console.log(`🌐 Navegando a página de impedimentos...`)
     await page.goto("https://www.gob.ec/mt/tramites/registro-impedimentos-laborar-sector-publico", {
-      waitUntil: "domcontentloaded"
+      waitUntil: "domcontentloaded",
+      timeout: 30000
     })
+    
+    console.log(`📄 Página cargada. Título: ${await page.title()}`)
 
+    console.log(`📊 Extrayendo datos de impedimentos...`)
     //obtengo los datos de la tabla saltandome el primer tr ya que ese es del titulo de la tabla
     const resultados = await page.$$eval("tbody", (tbodies) => {
       const tbody = tbodies[0] // primer tbody sin clase ni id

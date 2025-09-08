@@ -1,18 +1,35 @@
 import { chromium } from "playwright"
 import { DatabaseOperations, Collections, ErrorLogsModel } from '../Models/database.js'
 
-export const obtenerProcesos = async (cedula) => {
-  const browser = await chromium.launch({ headless: false })
-  const page = await browser.newPage()
+export const obtenerProcesosJudiciales = async (cedula) => {
+  console.log(`🔍 Iniciando consulta de procesos judiciales para cédula: ${cedula}`)
   
-  try {
-    await page.goto("https://procesosjudiciales.funcionjudicial.gob.ec/busqueda-filtros", {
-      waitUntil: "domcontentloaded"
-    })
+  const browser = await chromium.launch({ 
+    headless: true,
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-gpu'
+    ]
+  })
+  const page = await browser.newPage()
 
+  try {
+    console.log(`🌐 Navegando a página de procesos judiciales...`)
+    await page.goto("https://consultas.funcionjudicial.gob.ec/informacionjudicial/public/informacion.jsf", {
+      waitUntil: "domcontentloaded",
+      timeout: 30000
+    })
+    
+    console.log(`📄 Página cargada. Título: ${await page.title()}`)
+    
+    console.log(`📝 Ingresando cédula: ${cedula}`)
+    
     let resultadosActor = []
     let resultadosDemandado = []
 
+    console.log(`🔍 Buscando como actor...`)
     // Rellenamos el campo de cédula
     await page.type('input[formcontrolname="cedulaActor"]', cedula)    
     // Se le da click al botón de buscar

@@ -1,14 +1,30 @@
 import { chromium } from "playwright"
 import { DatabaseOperations, Collections, ErrorLogsModel } from '../Models/database.js'
 
-export const obtenerPensiones = async (cedula) => {
-  const browser = await chromium.launch({ headless: true })
+export const obtenerPensionAlimenticia = async (cedula) => {
+  console.log(`🔍 Iniciando consulta de pensión alimenticia para cédula: ${cedula}`)
+  
+  const browser = await chromium.launch({ 
+    headless: true,
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-gpu'
+    ]
+  })
   const page = await browser.newPage()
 
   try {
-    await page.goto("https://supa.funcionjudicial.gob.ec/pensiones/publico/consulta.jsf", {
-      waitUntil: "domcontentloaded"
+    console.log(`🌐 Navegando a página de pensión alimenticia...`)
+    await page.goto("https://pensionados.funcionjudicial.gob.ec/", {
+      waitUntil: "domcontentloaded",
+      timeout: 30000
     })
+    
+    console.log(`📄 Página cargada. Título: ${await page.title()}`)
+    
+    console.log(`📝 Ingresando cédula: ${cedula}`)
 
     // Rellenamos el campo de cédula
     await page.type("#form\\:t_texto_cedula", cedula) 

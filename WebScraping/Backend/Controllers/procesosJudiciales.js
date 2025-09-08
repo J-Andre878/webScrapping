@@ -1,4 +1,4 @@
-import { obtenerProcesos } from '../Scrapers/procesosJudiciales.mjs'
+import { obtenerProcesosJudiciales } from '../Scrapers/procesosJudiciales.mjs'
 
 export const consultarProcesosJudiciales = async (req, res) => {
   try {
@@ -6,7 +6,7 @@ export const consultarProcesosJudiciales = async (req, res) => {
     
     console.log(`🔍 Iniciando consulta de procesos judiciales para cédula: ${cedula}`)
     
-    const resultado = await obtenerProcesos(cedula)
+    const resultado = await obtenerProcesosJudiciales(cedula)
     
     res.json({
       success: true,

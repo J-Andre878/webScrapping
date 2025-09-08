@@ -1,4 +1,4 @@
-import { obtenerDatos } from '../Scrapers/senescyt.mjs'
+import { obtenerDatosSenescyt } from '../Scrapers/senescyt.mjs'
 
 export const consultarSenescyt = async (req, res) => {
   try {
@@ -6,7 +6,7 @@ export const consultarSenescyt = async (req, res) => {
     
     console.log(`🔍 Iniciando consulta de títulos SENESCYT para cédula: ${cedula}`)
     
-    const resultado = await obtenerDatos(cedula)
+    const resultado = await obtenerDatosSenescyt(cedula)
     
     res.json({
       success: true,

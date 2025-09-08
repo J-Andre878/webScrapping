@@ -1,4 +1,4 @@
-import { obtenerPensiones } from '../Scrapers/pensionAlimenticia.mjs'
+import { obtenerPensionAlimenticia } from '../Scrapers/pensionAlimenticia.mjs'
 
 export const consultarPensionAlimenticia = async (req, res) => {
   try {
@@ -6,7 +6,7 @@ export const consultarPensionAlimenticia = async (req, res) => {
     
     console.log(`🔍 Iniciando consulta de pensiones alimenticias para cédula: ${cedula}`)
     
-    const resultado = await obtenerPensiones(cedula)
+    const resultado = await obtenerPensionAlimenticia(cedula)
     
     res.json({
       success: true,

@@ -1,29 +1,30 @@
 import { chromium } from "playwright";
 import { DatabaseOperations, Collections, ErrorLogsModel } from '../Models/database.js';
 
-export const obtenerDatosInterpol = async (nombre, apellido = '') => {
-  const browser = await chromium.launch({
-    headless: false,
-    slowMo: 50,
+export const obtenerInterpol = async (nombre, apellido) => {
+  console.log(`🔍 Iniciando consulta Interpol para: ${nombre} ${apellido}`)
+  
+  const browser = await chromium.launch({ 
+    headless: true,
     args: [
       '--no-sandbox',
+      '--disable-setuid-sandbox',
       '--disable-dev-shm-usage',
-      '--disable-web-security'
-    ],
-    ...(process.platform === 'linux' && {
-      env: {
-        ...process.env,
-        DISPLAY: process.env.DISPLAY || ':0'
-      }
-    })
-  });
-  const page = await browser.newPage();
+      '--disable-gpu'
+    ]
+  })
+  const page = await browser.newPage()
 
   try {
-    await page.goto(
-      "https://www.interpol.int/es/Como-trabajamos/Notificaciones/Notificaciones-rojas/Ver-las-notificaciones-rojas",
-      { waitUntil: "domcontentloaded" }
-    );
+    console.log(`🌐 Navegando a página de Interpol...`)
+    await page.goto("https://www.interpol.int/es/Persona-buscada", {
+      waitUntil: "domcontentloaded",
+      timeout: 30000
+    })
+    
+    console.log(`📄 Página cargada. Título: ${await page.title()}`)
+    
+    console.log(`📝 Ingresando datos de búsqueda...`)
 
     await page.waitForSelector("#forename");
     await page.type("#forename", nombre);

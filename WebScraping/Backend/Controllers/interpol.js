@@ -1,4 +1,4 @@
-import { obtenerDatosInterpol } from "../Scrapers/interpol.mjs";
+import { obtenerInterpol } from "../Scrapers/interpol.mjs";
 
 export const consultarInterpol = async (req, res) => {
   try {
@@ -10,7 +10,7 @@ export const consultarInterpol = async (req, res) => {
 
     console.log(`🔍 Iniciando consulta Interpol para nombre: ${nombre} ${apellido}`);
 
-    const datos = await obtenerDatosInterpol(nombre, apellido);
+    const datos = await obtenerInterpol(nombre, apellido);
 
     res.json({
       success: true,

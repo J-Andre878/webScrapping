@@ -29,19 +29,26 @@ export const obtenerAntecedentesPenales = async (cedula) => {
     const context = await browser.newContext({ storageState: storage })
     const page = await context.newPage()
 
+    console.log(`🌐 Navegando a página de antecedentes penales...`)
     await page.goto('https://certificados.ministeriodelinterior.gob.ec/gestorcertificados/antecedentes/', {
-      waitUntil: 'domcontentloaded'
+      waitUntil: 'domcontentloaded',
+      timeout: 30000
     })
+    
+    console.log(`📄 Página cargada. Título: ${await page.title()}`)
 
+    console.log(`✅ Aceptando términos y condiciones...`)
     // Aceptar términos
     await page.waitForSelector('button.ui-button-text-only >> text=Aceptar', { timeout: 20000 })
     await page.click('button.ui-button-text-only >> text=Aceptar')
 
+    console.log(`📝 Llenando cédula: ${cedula}`)
     // Llenar cédula
     await page.waitForSelector('#txtCi', { visible: false })
     await page.fill('#txtCi', cedula)
     await page.click('#btnSig1')
 
+    console.log(`📋 Llenando motivo de consulta...`)
     // Llenar motivo
     await page.waitForSelector('#txtMotivo', { timeout: 30000 })
     await page.fill('#txtMotivo', 'Consulta Personal')

@@ -16,14 +16,30 @@ if (!fs.existsSync(tesseractDir)) {
   fs.mkdirSync(tesseractDir, { recursive: true })
 }
 
-export const obtenerDatos = async (cedula) => {
-  const browser = await chromium.launch({ headless: true })
+export const obtenerDatosSenescyt = async (cedula) => {
+  console.log(`🔍 Iniciando consulta SENESCYT para cédula: ${cedula}`)
+  
+  const browser = await chromium.launch({ 
+    headless: true,
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-gpu'
+    ]
+  })
   const page = await browser.newPage()
 
   try {
-    await page.goto("https://www.senescyt.gob.ec/consulta-titulos-web/faces/vista/consulta/consulta.xhtml", {
-      waitUntil: "domcontentloaded"
+    console.log(`🌐 Navegando a página de SENESCYT...`)
+    await page.goto("https://www.senescyt.gob.ec/web/consultaPublica/", {
+      waitUntil: "domcontentloaded",
+      timeout: 30000
     })
+    
+    console.log(`📄 Página cargada. Título: ${await page.title()}`)
+    
+    console.log(`📝 Ingresando cédula: ${cedula}`)
 
     let estado = ""
     let resultados = []

@@ -2,23 +2,40 @@ import { chromium } from "playwright"
 import { DatabaseOperations, Collections, ErrorLogsModel } from '../Models/database.js'
 
 export const obtenerCitacionesJudiciales = async (cedula) => {
-  const browser = await chromium.launch({ headless: true })
+  console.log(`🔍 Iniciando consulta de citaciones judiciales para cédula: ${cedula}`)
+  
+  const browser = await chromium.launch({ 
+    headless: true,
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-gpu'
+    ]
+  })
   const page = await browser.newPage()
 
   try {
+    console.log(`🌐 Navegando a página de citaciones judiciales...`)
     await page.goto("https://consultas.funcionjudicial.gob.ec/informacionjudicial/public/informacionCitaciones.jsf", {
-      waitUntil: "domcontentloaded"
+      waitUntil: "domcontentloaded",
+      timeout: 30000
     })
+    
+    console.log(`📄 Página cargada. Título: ${await page.title()}`)
 
+    console.log(`📝 Ingresando cédula: ${cedula}`)
     // Rellenamos el campo de cedula
     await page.type("#form1\\:txtDemandadoCedula", cedula)
 
     let noResultados = false
+    console.log(`🔍 Realizando búsqueda...`)
     while(true) {
       // Se le da click al botón de buscar
       await page.click("#form1\\:butBuscarJuicios")
       await page.waitForTimeout(1000)
 
+      console.log(`⏳ Verificando estado de resultados...`)
       // Verificar el estado de los resultados
       const estadoResultados = await page.$$eval("#form1\\:dataTableJuicios2_data tr", (filas) => {
         if (filas.length === 0) {

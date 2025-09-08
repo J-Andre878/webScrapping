@@ -17,22 +17,39 @@ if (!fs.existsSync(tesseractDir)) {
 }
 
 export const datosIESS = async (cedula) => {
-    const browser = await chromium.launch({ headless: true })
+    console.log(`🔍 Iniciando consulta IESS para cédula: ${cedula}`)
+    
+    const browser = await chromium.launch({ 
+        headless: true,
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-gpu'
+        ]
+    })
     const page = await browser.newPage()
 
     try {
+        console.log(`🌐 Navegando a la página del IESS...`)
         await page.goto("https://app.iess.gob.ec/gestion-calificacion-derecho-web/public/formulariosContacto.jsf", {
-        waitUntil: "domcontentloaded"
+        waitUntil: "domcontentloaded",
+        timeout: 30000
         })
+        
+        console.log(`📄 Página cargada. Título: ${await page.title()}`)
+        console.log(`📝 Ingresando cédula: ${cedula}`)
 
         // Rellenamos el campo de cedula
         await page.type("#formConsulta\\:cedula_text", cedula)
 
+        console.log(`📅 Seleccionando fecha actual...`)
         // Se le da click al boton de fecha
         await page.click('.ui-datepicker-trigger')
         // Se selecciona la fecha actual
         await page.click('.ui-datepicker-days-cell-over.ui-datepicker-today')
 
+        console.log(`🏥 Seleccionando opción Enfermedad...`)
         //Se selecciona la opcion ENFERMEDAD que tiene el valor "14"
         // 1. Click al menú desplegable visible
         await page.click('#formConsulta\\:contingencia_select .ui-selectonemenu-label');
@@ -169,7 +186,9 @@ export const datosIESS = async (cedula) => {
         return datos
 
     } catch (error) {
-        console.error("❌ Error al obtener datos IESS:", error)
+        console.error(`❌ Error en datosIESS: ${error.message}`)
+        console.error(`🔍 Stack trace: ${error.stack}`)
+        console.error(`🌐 URL actual: ${await page.url().catch(() => 'No disponible')}`)
         
         // Guardar error en base de datos
         await ErrorLogsModel.saveError(

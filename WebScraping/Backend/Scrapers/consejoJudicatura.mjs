@@ -2,23 +2,44 @@ import { chromium } from "playwright"
 import { DatabaseOperations, Collections, ErrorLogsModel } from '../Models/database.js'
 
 export const obtenerConsejoJudicatura = async (nombre, tipoBusqueda, provinciaInstitucion = null, canton = null) => {
-  const browser = await chromium.launch({ headless: true })
+  console.log(`🔍 Iniciando consulta Consejo Judicatura para: ${nombre}`)
+  console.log(`🔍 Tipo búsqueda: ${tipoBusqueda}, Provincia: ${provinciaInstitucion}, Cantón: ${canton}`)
+  
+  const browser = await chromium.launch({ 
+    headless: true,
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-gpu'
+    ]
+  })
   const page = await browser.newPage()
 
   try {
+    console.log(`🌐 Navegando a página del Consejo de la Judicatura...`)
     await page.goto("https://appsj.funcionjudicial.gob.ec/informativo/pages/directorio.jsf", {
-      waitUntil: "domcontentloaded"
+      waitUntil: "domcontentloaded",
+      timeout: 30000
     })
+    
+    console.log(`📄 Página cargada. Título: ${await page.title()}`)
 
+    console.log(`📝 Ingresando nombre del funcionario: ${nombre}`)
     // Rellenamos el campo de nombre del funcionario
     await page.type("#nameOfficial", nombre)
+    
+    console.log(`📋 Seleccionando tipo de búsqueda: ${tipoBusqueda}`)
     // Seleccionamos el campo de tipo de busqueda
     await page.selectOption('select#j_idt32', tipoBusqueda.toUpperCase())
+    
     if (provinciaInstitucion !== null) {
+      console.log(`🏛️ Seleccionando provincia/institución: ${provinciaInstitucion}`)
       // Seleccionamos el campo de provincia o institucion
       await page.selectOption('select#j_idt37', provinciaInstitucion.toUpperCase())
     }
     if (tipoBusqueda.toLowerCase() === "provincias" && canton !== null) {
+      console.log(`🏘️ Seleccionando cantón: ${canton}`)
       // Seleccionamos el campo de canton
       await page.selectOption('select#selectProvincia', canton.toUpperCase())
     }
