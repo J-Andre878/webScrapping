@@ -3,18 +3,39 @@ import { chromium } from "playwright"
 import { DatabaseOperations, Collections, ErrorLogsModel } from '../Models/database.js'
 
 export const obtenerCitaciones = async (cedula) => {
-  const browser = await chromium.launch({ headless: true })
+  const browser = await chromium.launch({ 
+    headless: true,
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox', 
+      '--disable-dev-shm-usage',
+      '--disable-web-security',
+      '--disable-features=VizDisplayCompositor'
+    ]
+  })
   const page = await browser.newPage()
+
+  // Configurar user agent y viewport
+  await page.setUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
+  await page.setViewportSize({ width: 1280, height: 720 })
 
   try {
     await page.goto("https://consultaweb.ant.gob.ec/PortalWEB/paginas/clientes/clp_criterio_consulta.jsp", {
-      waitUntil: "domcontentloaded"
+      waitUntil: "networkidle",
+      timeout: 30000
     })
+
+    // Esperar a que la página esté completamente cargada
+    await page.waitForLoadState('domcontentloaded')
+    await page.waitForTimeout(3000)
 
     // Rellenamos el campo de cedula
     await page.type("#ps_identificacion", cedula)
     // Se le da click al botón de buscar
     await page.click('a[href="javascript:validar();"]')
+
+    // Esperar más tiempo para que JavaScript procese
+    await page.waitForTimeout(5000)
 
     //Espera hasta que se ingresen la cedula y le de clik, ahí aparece el div con el id div_estado_cuenta
     await page.waitForSelector("#div_estado_cuenta", { timeout: 60000 })

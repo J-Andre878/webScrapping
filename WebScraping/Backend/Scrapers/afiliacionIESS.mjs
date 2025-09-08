@@ -1,5 +1,6 @@
 import { chromium } from "playwright"
 import Tesseract from 'tesseract.js'
+import sharp from 'sharp'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'

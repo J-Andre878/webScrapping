@@ -62,7 +62,12 @@ RestartSec=5
 WantedBy=multi-user.target
 
 
-4. Habilitar el servicio
+4. Dar permisos al servicio
+```bash
+sudo chown -R [USUARIO]:[USUARIO] /ruta/del/proyecto
+```
+
+5. Habilitar el servicio
 sudo systemctl daemon-reload
 sudo systemctl enable webscraping.service
 sudo systemctl restart webscraping.service
