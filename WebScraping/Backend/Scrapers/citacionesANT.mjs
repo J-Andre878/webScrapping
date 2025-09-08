@@ -3,21 +3,60 @@ import { chromium } from "playwright"
 import { DatabaseOperations, Collections, ErrorLogsModel } from '../Models/database.js'
 
 export const obtenerCitaciones = async (cedula) => {
-  const browser = await chromium.launch({ headless: true })
+  console.log(`🔍 Iniciando consulta CitacionesANT para cédula: ${cedula}`)
+  const browser = await chromium.launch({ 
+    headless: true,
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-web-security'
+    ]
+  })
   const page = await browser.newPage()
+  
+  // Configurar user agent para parecer navegador real
+  await page.setExtraHTTPHeaders({
+    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+  });
 
   try {
+    console.log(`🌐 Navegando a la página de ANT...`)
     await page.goto("https://consultaweb.ant.gob.ec/PortalWEB/paginas/clientes/clp_criterio_consulta.jsp", {
-      waitUntil: "domcontentloaded"
+      waitUntil: "networkidle",
+      timeout: 30000
     })
+    
+    console.log(`📄 Página cargada. Título: ${await page.title()}`)
 
+    console.log(`📝 Ingresando cédula: ${cedula}`)
     // Rellenamos el campo de cedula
+    await page.waitForSelector("#ps_identificacion", { timeout: 10000 })
     await page.type("#ps_identificacion", cedula)
     // Se le da click al botón de buscar
+    console.log(`🔍 Haciendo clic en el botón de buscar...`)
     await page.click('a[href="javascript:validar();"]')
 
+    // Esperar un poco para que JavaScript procese
+    await page.waitForTimeout(3000)
+
     //Espera hasta que se ingresen la cedula y le de clik, ahí aparece el div con el id div_estado_cuenta
-    await page.waitForSelector("#div_estado_cuenta", { timeout: 60000 })
+    console.log(`⏳ Esperando el elemento #div_estado_cuenta...`)
+    
+    try {
+      await page.waitForSelector("#div_estado_cuenta", { timeout: 60000 })
+      console.log(`✅ Elemento #div_estado_cuenta encontrado`)
+    } catch (error) {
+      console.log(`❌ Error esperando #div_estado_cuenta:`, error.message)
+      console.log(`📄 URL actual: ${page.url()}`)
+      console.log(`📄 Título actual: ${await page.title()}`)
+      
+      // Intentar buscar elementos alternativos
+      const bodyText = await page.textContent('body')
+      console.log(`📝 Contenido de la página (primeros 500 chars):`, bodyText?.substring(0, 500))
+      
+      throw error
+    }
 
     //Espera 2 segundos para que se cargue la tabla de citaciones pendientes
     await page.waitForTimeout(2000)
