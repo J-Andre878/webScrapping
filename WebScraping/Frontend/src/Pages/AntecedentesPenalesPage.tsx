@@ -225,7 +225,8 @@ export function AntecedentesPenalesPage() {
                   className="w-full"
                   disabled={isLoading}
                   onClick={() => {
-                    const newWindow = window.open("http://localhost:6080/vnc.html", "_blank")
+                    const vncUrl = `${import.meta.env.VITE_VNC_URL || 'http://localhost:6080'}/vnc.html`
+                    const newWindow = window.open(vncUrl, "_blank")
                     setVncWindow(newWindow)
                   }}
                 >

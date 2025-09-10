@@ -5,6 +5,14 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
+# Declarar argumentos de build para las variables de entorno
+ARG VITE_API_BASE_URL=http://localhost:3001
+ARG VITE_VNC_URL=http://localhost:6080
+
+# Convertir argumentos en variables de entorno para el build
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+ENV VITE_VNC_URL=$VITE_VNC_URL
+
 # Copiar package.json y package-lock.json
 COPY package*.json ./
 

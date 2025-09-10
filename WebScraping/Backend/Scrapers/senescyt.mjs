@@ -32,12 +32,13 @@ export const obtenerDatosSenescyt = async (cedula) => {
 
   try {
     console.log(`🌐 Navegando a página de SENESCYT...`)
-    await page.goto("https://www.senescyt.gob.ec/web/consultaPublica/", {
+    await page.goto("https://www.senescyt.gob.ec/consulta-titulos-web/faces/vista/consulta/consulta.xhtml", {
       waitUntil: "domcontentloaded",
       timeout: 30000
     })
     
     console.log(`📄 Página cargada. Título: ${await page.title()}`)
+    console.log(`📄 URL actual: ${page.url()}`)
     
     console.log(`📝 Ingresando cédula: ${cedula}`)
 

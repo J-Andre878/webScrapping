@@ -5,7 +5,7 @@ export const obtenerProcesosJudiciales = async (cedula) => {
   console.log(`🔍 Iniciando consulta de procesos judiciales para cédula: ${cedula}`)
   
   const browser = await chromium.launch({ 
-    headless: true,
+    headless: false,
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
@@ -17,7 +17,7 @@ export const obtenerProcesosJudiciales = async (cedula) => {
 
   try {
     console.log(`🌐 Navegando a página de procesos judiciales...`)
-    await page.goto("https://consultas.funcionjudicial.gob.ec/informacionjudicial/public/informacion.jsf", {
+    await page.goto("https://procesosjudiciales.funcionjudicial.gob.ec/busqueda-filtros", {
       waitUntil: "domcontentloaded",
       timeout: 30000
     })

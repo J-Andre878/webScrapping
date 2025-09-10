@@ -5,24 +5,26 @@ export const obtenerInterpol = async (nombre, apellido) => {
   console.log(`🔍 Iniciando consulta Interpol para: ${nombre} ${apellido}`)
   
   const browser = await chromium.launch({ 
-    headless: true,
+    headless: false,  // Cambio: usar display gráfico en lugar de headless
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
       '--disable-dev-shm-usage',
-      '--disable-gpu'
+      '--disable-gpu',
+      '--display=:99'  // Usar el display virtual donde corre VNC
     ]
   })
   const page = await browser.newPage()
 
   try {
     console.log(`🌐 Navegando a página de Interpol...`)
-    await page.goto("https://www.interpol.int/es/Persona-buscada", {
+    await page.goto("https://www.interpol.int/es/Como-trabajamos/Notificaciones/Notificaciones-rojas/Ver-las-notificaciones-rojas", {
       waitUntil: "domcontentloaded",
       timeout: 30000
     })
     
     console.log(`📄 Página cargada. Título: ${await page.title()}`)
+    console.log(`📄 URL actual: ${page.url()}`)
     
     console.log(`📝 Ingresando datos de búsqueda...`)
 

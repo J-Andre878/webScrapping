@@ -17,7 +17,7 @@ export const obtenerPensionAlimenticia = async (cedula) => {
 
   try {
     console.log(`🌐 Navegando a página de pensión alimenticia...`)
-    await page.goto("https://pensionados.funcionjudicial.gob.ec/", {
+    await page.goto("https://supa.funcionjudicial.gob.ec/pensiones/publico/consulta.jsf", {
       waitUntil: "domcontentloaded",
       timeout: 30000
     })

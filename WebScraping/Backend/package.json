@@ -4,11 +4,13 @@
   "type": "module",
   "scripts": {
     "start": "node app.js",
-    "dev": "nodemon app.js"
+    "dev": "nodemon app.js",
+    "install-browsers": "npx playwright install",
+    "postinstall": "npx playwright install"
   },
   "dependencies": {
     "canvas": "^3.2.0",
-    "cors": "^2.8.5",
+    "cors": "^2.8.5", 
     "dotenv": "^17.2.1",
     "express": "^4.21.2",
     "mongodb": "^6.18.0",

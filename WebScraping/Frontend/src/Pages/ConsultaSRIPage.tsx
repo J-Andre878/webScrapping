@@ -267,21 +267,21 @@ export function ConsultaSRIPage() {
             <CardHeader>
               <CardTitle>Consulta SRI</CardTitle>
               <CardDescription>
-                Verifica información tributaria y establecimientos registrados ingresando el número de RUC.
+                Verifica información tributaria y establecimientos registrados ingresando el número de RUC o cédula.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="ruc">Número de RUC</Label>
+                  <Label htmlFor="ruc">Número de RUC o Cédula</Label>
                   <Input
                     id="ruc"
-                    placeholder="Ej: 1234567890001"
+                    placeholder="Ej: 1750533921 (cédula) o 1234567890001 (RUC)"
                     {...register("ruc", {
-                      required: "El RUC es requerido",
+                      required: "El RUC o cédula es requerido",
                       pattern: {
-                        value: /^\d{13}$/,
-                        message: "El RUC debe tener 13 dígitos",
+                        value: /^\d{10}$|^\d{13}$/,
+                        message: "Debe tener 10 dígitos (cédula) o 13 dígitos (RUC)",
                       },
                     })}
                   />
@@ -293,7 +293,8 @@ export function ConsultaSRIPage() {
                   className="w-full"
                   disabled={isLoading}
                   onClick={() => {
-                    const newWindow = window.open("http://localhost:6080/vnc.html", "_blank")
+                    const vncUrl = `${import.meta.env.VITE_VNC_URL || 'http://localhost:6080'}/vnc.html`
+                    const newWindow = window.open(vncUrl, "_blank")
                     setVncWindow(newWindow)
                   }}
                 >
