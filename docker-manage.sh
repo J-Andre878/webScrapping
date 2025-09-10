@@ -2,6 +2,17 @@
 
 # Script para manejar el proyecto Docker
 
+# Cargar variables de entorno si existe el archivo .env
+if [ -f .env ]; then
+    source .env
+fi
+
+# Establecer valores por defecto
+SERVER_IP=${SERVER_IP:-localhost}
+FRONTEND_PORT=${FRONTEND_PORT:-80}
+MONGODB_PORT=${MONGODB_PORT:-27018}
+VNC_PORT=${VNC_PORT:-6080}
+
 case "$1" in
     "build")
         echo "🔨 Construyendo las imágenes Docker..."
@@ -11,8 +22,9 @@ case "$1" in
         echo "🚀 Iniciando los servicios..."
         docker-compose up -d
         echo "✅ Servicios iniciados!"
-        echo "🌐 Frontend: http://localhost"
-        echo "🗄️  MongoDB: mongodb://localhost:27017"
+        echo "🌐 Frontend: http://${SERVER_IP}:${FRONTEND_PORT}"
+        echo "🗄️  MongoDB: mongodb://${SERVER_IP}:${MONGODB_PORT}"
+        echo "🖥️  VNC: http://${SERVER_IP}:${VNC_PORT}"
         ;;
     "down")
         echo "🛑 Deteniendo los servicios..."

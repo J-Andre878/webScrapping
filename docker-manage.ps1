@@ -4,6 +4,22 @@ param(
     [string]$Service
 )
 
+# Cargar variables de entorno desde .env si existe
+$envFile = ".env"
+$ServerIP = "localhost"
+$FrontendPort = "80"
+$MongoPort = "27018"
+$VncPort = "6080"
+
+if (Test-Path $envFile) {
+    Get-Content $envFile | ForEach-Object {
+        if ($_ -match "^SERVER_IP=(.+)$") { $ServerIP = $matches[1] }
+        if ($_ -match "^FRONTEND_PORT=(.+)$") { $FrontendPort = $matches[1] }
+        if ($_ -match "^MONGODB_PORT=(.+)$") { $MongoPort = $matches[1] }
+        if ($_ -match "^VNC_PORT=(.+)$") { $VncPort = $matches[1] }
+    }
+}
+
 switch ($Action) {
     "build" {
         Write-Host "Construyendo las imagenes Docker..." -ForegroundColor Yellow
@@ -13,9 +29,9 @@ switch ($Action) {
         Write-Host "Iniciando los servicios..." -ForegroundColor Green
         docker-compose up -d
         Write-Host "Servicios iniciados!" -ForegroundColor Green
-        Write-Host "Frontend: http://localhost" -ForegroundColor Cyan
-        Write-Host "Backend: http://localhost:3001" -ForegroundColor Cyan
-        Write-Host "MongoDB: mongodb://localhost:27017" -ForegroundColor Cyan
+        Write-Host "Frontend: http://${ServerIP}:${FrontendPort}" -ForegroundColor Cyan
+        Write-Host "MongoDB: mongodb://${ServerIP}:${MongoPort}" -ForegroundColor Cyan
+        Write-Host "VNC: http://${ServerIP}:${VncPort}" -ForegroundColor Cyan
     }
     "down" {
         Write-Host "Deteniendo los servicios..." -ForegroundColor Red
