@@ -7,9 +7,28 @@ Proyecto que realiza Web scrapping de páginas como la Senecyt, SUPA, Sercop, et
 - MongoDB
 - Docker y Docker Compose
 - xvfb, x11vnc, fluxbox (para VNC)
-- wget, git
+- wget, gi## 📋 Scrapers Disponibles
 
-## 📋 Instalación
+### Scrapers Automáticos (sin intervención manual)
+- ✅ Citaciones ANT
+- ✅ Citación Judicial  
+- ✅ Consejo de la Judicatura
+- ✅ **Consulta SRI** (Actualizado - ahora usa APIs directas)
+- ✅ Impedimentos Cargos Públicos
+- ✅ Pensión Alimenticia
+- ✅ Senescyt
+- ✅ Superintendencia de Compañías (SuperCías)
+- ✅ Datos IESS
+
+### Scrapers con Intervención Manual (requieren VNC)
+- 🖱️ Procesos Judiciales  
+- 🖱️ Antecedentes Penales
+- 🖱️ Interpol
+- �️ Deudas SRI
+
+Los scrapers manuales abren una ventana VNC donde puedes interactuar directamente con el navegador.
+
+> **🚀 Nuevo**: El scraper de **Consulta SRI** ahora usa las APIs oficiales del SRI, por lo que es mucho más rápido y no requiere intervención manual.
 
 > **💡 Nota importante**: Este proyecto usa archivos `.env` para la configuración que **NO se incluyen en GitHub** por seguridad. Necesitarás crearlos basándote en los archivos `.env.example` que sí están incluidos.
 
@@ -196,7 +215,7 @@ Habilitar y configurar el servicio:
 cd WebScraping/Backend
 npm install
 
-# Configurar permisos
+# Configurar permisos 
 sudo chown -R [TU_USUARIO]:[TU_USUARIO] /ruta/del/proyecto
 
 # Habilitar el servicio
@@ -272,12 +291,13 @@ docker-compose down
 docker-compose down -v
 ```
 
-## � Scrapers Disponibles
+## 📋 Scrapers Disponibles
 
 ### Scrapers Automáticos (sin intervención manual)
-- ✅ Citaciones ANT
-- ✅ Citación Judicial  
+- ✅ **Citaciones ANT** (Actualizado - ahora usa APIs directas)
+- ✅ **Citación Judicial** (Actualizado - ahora usa APIs JSF/AJAX)
 - ✅ Consejo de la Judicatura
+- ✅ **Consulta SRI** (Actualizado - ahora usa APIs directas)
 - ✅ Impedimentos Cargos Públicos
 - ✅ Pensión Alimenticia
 - ✅ Senescyt
@@ -285,13 +305,14 @@ docker-compose down -v
 - ✅ Datos IESS
 
 ### Scrapers con Intervención Manual (requieren VNC)
-- 🖱️ Consulta SRI
 - 🖱️ Procesos Judiciales  
 - 🖱️ Antecedentes Penales
 - 🖱️ Interpol
 - 🖱️ Deudas SRI
 
 Los scrapers manuales abren una ventana VNC donde puedes interactuar directamente con el navegador.
+
+> **🚀 Actualizado**: Los scrapers de **Consulta SRI**, **Citaciones ANT** y **Citación Judicial** ahora usan las APIs oficiales/JSF, por lo que son mucho más rápidos y no requieren intervención manual.
 
 ## 🛠️ Troubleshooting
 

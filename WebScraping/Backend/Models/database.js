@@ -92,6 +92,38 @@ export const DatabaseOperations = {
     return await collection.findOne({ ruc })
   },
 
+  // Buscar un documento con filtro genérico
+  async findOne(collectionName, filter) {
+    const collection = getCollection(collectionName)
+    return await collection.findOne(filter)
+  },
+
+  // Buscar múltiples documentos
+  async find(collectionName, filter = {}) {
+    const collection = getCollection(collectionName)
+    return await collection.find(filter).toArray()
+  },
+
+  // Guardar una consulta (buscar existente o crear nuevo)
+  async saveQuery(collectionName, queryData) {
+    const collection = getCollection(collectionName)
+    const { cedula } = queryData
+    
+    // Buscar documento existente
+    const existingDoc = await collection.findOne({ cedula })
+    
+    if (existingDoc) {
+      // Actualizar documento existente
+      return await collection.updateOne(
+        { cedula },
+        { $set: queryData }
+      )
+    } else {
+      // Insertar nuevo documento
+      return await collection.insertOne(queryData)
+    }
+  },
+
   // Insertar un nuevo documento
   async insertOne(collectionName, document) {
     const collection = getCollection(collectionName)

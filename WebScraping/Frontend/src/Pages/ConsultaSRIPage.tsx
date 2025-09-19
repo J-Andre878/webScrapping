@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -36,40 +36,12 @@ export function ConsultaSRIPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [sriData, setSriData] = useState<ConsultaSRIData | null>(null)
   const [showCards, setShowCards] = useState(false)
-  const [vncWindow, setVncWindow] = useState<Window | null>(null)
 
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<FormData>()
-
-  // Función para cerrar la ventana VNC
-  const closeVncWindow = () => {
-    if (vncWindow && !vncWindow.closed) {
-      vncWindow.close()
-      setVncWindow(null)
-    }
-  }
-
-  // useEffect para cerrar cuando termine el loading (exitoso o con error)
-  useEffect(() => {
-    if (!isLoading && vncWindow && !vncWindow.closed) {
-      // Agregar un pequeño delay para que el usuario vea el resultado antes de cerrar
-      const timer = setTimeout(() => {
-        closeVncWindow()
-      }, 2000) // 2 segundos de delay
-
-      return () => clearTimeout(timer)
-    }
-  }, [isLoading, vncWindow])
-
-  // Cleanup al desmontar el componente
-  useEffect(() => {
-    return () => {
-      closeVncWindow()
-    }
-  }, [])
 
   const onSubmit = async (data: FormData) => {
     setIsLoading(true)
@@ -256,7 +228,7 @@ export function ConsultaSRIPage() {
         <div className="flex h-14 items-center px-4">
           <SidebarTrigger />
           <div className="ml-4">
-            <h1 className="text-lg font-semibold">Consulta SRI</h1>
+            <h1 className="text-lg font-semibold">Consulta SRI - Solo RUC</h1>
           </div>
         </div>
       </header>
@@ -265,38 +237,36 @@ export function ConsultaSRIPage() {
         <div className="max-w-7xl mx-auto">
           <Card>
             <CardHeader>
-              <CardTitle>Consulta SRI</CardTitle>
+              <CardTitle>Consulta SRI - Solo RUC</CardTitle>
               <CardDescription>
-                Verifica información tributaria y establecimientos registrados ingresando el número de RUC o cédula.
+                Verifica información tributaria y establecimientos registrados ingresando el número de RUC (13 dígitos).
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="ruc">Número de RUC o Cédula</Label>
+                  <Label htmlFor="ruc">Número de RUC</Label>
                   <Input
                     id="ruc"
-                    placeholder="Ej: 1750533921 (cédula) o 1234567890001 (RUC)"
+                    placeholder="Ej: 1234567890001 (RUC - 13 dígitos)"
                     {...register("ruc", {
-                      required: "El RUC o cédula es requerido",
+                      required: "El RUC es requerido",
                       pattern: {
-                        value: /^\d{10}$|^\d{13}$/,
-                        message: "Debe tener 10 dígitos (cédula) o 13 dígitos (RUC)",
+                        value: /^\d{13}$/,
+                        message: "El RUC debe tener exactamente 13 dígitos",
                       },
                     })}
                   />
                   {errors.ruc && <p className="text-sm text-destructive">{errors.ruc.message}</p>}
+                  <p className="text-xs text-muted-foreground">
+                    ⚠️ Solo se permiten números de RUC (13 dígitos). No se aceptan cédulas.
+                  </p>
                 </div>
 
                 <Button
                   type="submit"
                   className="w-full"
                   disabled={isLoading}
-                  onClick={() => {
-                    const vncUrl = `${import.meta.env.VITE_VNC_URL || 'http://localhost:6080'}/vnc.html`
-                    const newWindow = window.open(vncUrl, "_blank")
-                    setVncWindow(newWindow)
-                  }}
                 >
                   {isLoading ? "Consultando..." : "Consultar"}
                 </Button>

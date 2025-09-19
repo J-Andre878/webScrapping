@@ -1,9 +1,10 @@
-import { chromium } from "playwright"
 import { DatabaseOperations, Collections, ErrorLogsModel } from '../Models/database.js'
 
 export const obtenerConsejoJudicatura = async (nombre, tipoBusqueda, provinciaInstitucion = null, canton = null) => {
   console.log(`🔍 Iniciando consulta Consejo Judicatura para: ${nombre}`)
-  console.log(`🔍 Tipo búsqueda: ${tipoBusqueda}, Provincia: ${provinciaInstitucion}, Cantón: ${canton}`)
+  console.log(`🔍 Tipo búsqueda: ${tipoBusqueda}, Provincia/Institución: ${provinciaInstitucion}, Cantón: ${canton}`)
+  
+  const { chromium } = await import('playwright')
   
   const browser = await chromium.launch({ 
     headless: true,
@@ -23,27 +24,32 @@ export const obtenerConsejoJudicatura = async (nombre, tipoBusqueda, provinciaIn
       timeout: 30000
     })
     
-    console.log(`📄 Página cargada. Título: ${await page.title()}`)
-
-    console.log(`📝 Ingresando nombre del funcionario: ${nombre}`)
+    console.log(`📝 Ingresando datos del formulario...`)
     // Rellenamos el campo de nombre del funcionario
-    await page.type("#nameOfficial", nombre)
+    await page.fill("#nameOfficial", nombre || '')
     
     console.log(`📋 Seleccionando tipo de búsqueda: ${tipoBusqueda}`)
     // Seleccionamos el campo de tipo de busqueda
     await page.selectOption('select#j_idt32', tipoBusqueda.toUpperCase())
+    
+    // Esperar que se llene el select dependiente
+    await page.waitForTimeout(3000)
     
     if (provinciaInstitucion !== null) {
       console.log(`🏛️ Seleccionando provincia/institución: ${provinciaInstitucion}`)
       // Seleccionamos el campo de provincia o institucion
       await page.selectOption('select#j_idt37', provinciaInstitucion.toUpperCase())
     }
+    
     if (tipoBusqueda.toLowerCase() === "provincias" && canton !== null) {
-      console.log(`🏘️ Seleccionando cantón: ${canton}`)
+      console.log(`�️ Seleccionando cantón: ${canton}`)
+      // Esperar que se llene el select de cantones
+      await page.waitForTimeout(3000)
       // Seleccionamos el campo de canton
       await page.selectOption('select#selectProvincia', canton.toUpperCase())
     }
     
+    console.log(`🔍 Ejecutando búsqueda...`)
     // Se le da click al botón de buscar
     await page.click("#j_idt47")
 
@@ -67,7 +73,10 @@ export const obtenerConsejoJudicatura = async (nombre, tipoBusqueda, provinciaIn
     }
 
     const resultadosTotales = []
+    let paginaActual = 1
+    
     while (true) {
+      console.log(`📄 Procesando página ${paginaActual}...`)
       // Esperar a que se cargue la tabla
       await page.waitForSelector('#table\\:tb tr', { timeout: 60000 })
 
@@ -93,8 +102,10 @@ export const obtenerConsejoJudicatura = async (nombre, tipoBusqueda, provinciaIn
       const siguiente = await page.$('a#j_idt97_ds_next')
 
       if (siguiente) {
+        console.log(`➡️ Navegando a página ${paginaActual + 1}...`)
         await siguiente.click()
-        await page.waitForTimeout(1000) // espera breve por si tarda en cargar
+        await page.waitForTimeout(2000) // espera para que cargue la nueva página
+        paginaActual++
       } else {
         break  // no hay más páginas
       }
@@ -102,16 +113,21 @@ export const obtenerConsejoJudicatura = async (nombre, tipoBusqueda, provinciaIn
 
     console.log(`✅ Se encontraron ${resultadosTotales.length} funcionarios del Consejo de la Judicatura`)
 
-    // Guardar en MongoDB solo los resultados
+    // Guardar en MongoDB solo si hay resultados
     if (resultadosTotales.length > 0) {
-      await DatabaseOperations.addToArrayNoDuplicates(
-        Collections.CONSEJO_JUDICATURA,
-        { tipo: "funcionarios_judicatura" },
-        'funcionarios',
-        resultadosTotales,
-        ['funcionario', 'cargo', 'departamento']
-      )
-      console.log(`💾 Datos guardados en base de datos`)
+      try {
+        await DatabaseOperations.addToArrayNoDuplicates(
+          Collections.CONSEJO_JUDICATURA,
+          { tipo: "funcionarios_judicatura" },
+          'funcionarios',
+          resultadosTotales,
+          ['funcionario', 'cargo', 'departamento']
+        )
+        console.log(`💾 Datos guardados en base de datos`)
+      } catch (dbError) {
+        console.warn('⚠️ Error guardando en BD:', dbError.message)
+        // No lanzar error, permitir que la consulta continue
+      }
     }
 
     // Retornar datos para el controller
@@ -128,19 +144,23 @@ export const obtenerConsejoJudicatura = async (nombre, tipoBusqueda, provinciaIn
     console.error("\n❌ Error en obtenerConsejoJudicatura:", error.message)
     
     // Guardar error en base de datos
-    await ErrorLogsModel.saveError(
-      'consejo-judicatura',
-      nombre, // Usamos el nombre como identificador
-      'error_general',
-      { 
-        mensaje: error.message || 'Error al consultar Consejo de la Judicatura',
-        stack: error.stack,
-        tipo: error.name || 'Error',
-        tipoBusqueda: tipoBusqueda,
-        provinciaInstitucion: provinciaInstitucion,
-        canton: canton
-      }
-    ).catch(err => console.warn('⚠️ Error guardando log:', err.message));
+    try {
+      await ErrorLogsModel.saveError(
+        'consejo-judicatura',
+        nombre,
+        'error_general',
+        { 
+          mensaje: error.message || 'Error al consultar Consejo de la Judicatura',
+          stack: error.stack,
+          tipo: error.name || 'Error',
+          tipoBusqueda: tipoBusqueda,
+          provinciaInstitucion: provinciaInstitucion,
+          canton: canton
+        }
+      )
+    } catch (logError) {
+      console.warn('⚠️ Error guardando log:', logError.message)
+    }
     
     throw new Error(`Error al consultar Consejo de la Judicatura: ${error.message}`)
   } finally {

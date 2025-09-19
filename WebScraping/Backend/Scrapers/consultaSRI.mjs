@@ -1,79 +1,54 @@
-import { chromium } from "playwright"
 import { DatabaseOperations, Collections, ErrorLogsModel } from '../Models/database.js'
 
 export const obtenerDatosRuc = async (ruc) => {
   console.log(`🔍 Iniciando consulta SRI para RUC: ${ruc}`)
   
-  const browser = await chromium.launch({ 
-    headless: false,  // Manteniendo headless: false como estaba originalmente
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--disable-gpu'
-    ]
-  })
-  const page = await browser.newPage()
-
   try {
-    console.log(`🌐 Navegando a página del SRI...`)
-    await page.goto("https://srienlinea.sri.gob.ec/sri-en-linea/SriRucWeb/ConsultaRuc/Consultas/consultaRuc", {
-      waitUntil: "domcontentloaded",
-      timeout: 30000
-    })
+    console.log(`🌐 Consultando APIs del SRI...`)
     
-    console.log(`📄 Página cargada. Título: ${await page.title()}`)
+    // Configurar headers comunes para las APIs
+    const headers = {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+      'Accept': 'application/json, text/plain, */*',
+      'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
+      'Referer': 'https://srienlinea.sri.gob.ec/'
+    }
 
-    console.log(`📝 Ingresando RUC: ${ruc}`)
-    // Rellenamos el campo de RUC
-    await page.type('input[formcontrolname="inputRuc"]', ruc)
+    // API 1: Datos del contribuyente
+    const contribuyenteUrl = `https://srienlinea.sri.gob.ec/sri-catastro-sujeto-servicio-internet/rest/ConsolidadoContribuyente/obtenerPorNumerosRuc?&ruc=${ruc}`
     
-    console.log(`🔍 Haciendo clic en buscar...`)
-    // Se le da click al botón de buscar
-    await page.click('.ui-button.ui-widget.ui-state-default.ui-corner-all.ui-button-text-only.cyan-btn')
-    
-    console.log(`⏳ Esperando resultados del contribuyente...`)
-    //Espera hasta que aparezca la etiqueta que tiene la clase row
-    await page.waitForSelector("sri-mostrar-contribuyente", { timeout: 60000 })
-    await page.click(".ui-button.cyan-btn.ui-widget.ui-state-default.ui-corner-all.ui-button-text-only")
-    
-    console.log(`⏳ Esperando información de establecimientos...`)
-    await page.waitForSelector("sri-listar-establecimientos", { timeout: 60000 })
+    // API 2: Establecimientos
+    const establecimientosUrl = `https://srienlinea.sri.gob.ec/sri-catastro-sujeto-servicio-internet/rest/Establecimiento/consultarPorNumeroRuc?numeroRuc=${ruc}`
 
-    console.log(`📊 Extrayendo datos del contribuyente...`)
-    // Se extraen los datos del RUC
-    const datosContribuyente = await page.$$eval("sri-mostrar-contribuyente", (elementos) => {
-      return elementos.map((el) => {
-        const estadoSpan = el.querySelector(".col-sm-8.alineacion-texto-centro.titulo-consultas-1.tamano-defecto-campos.alinear-izquierda.ng-star-inserted span")
-        const tds = el.querySelectorAll(".col-sm-12.centrar-texto-tabla td")
-
-        return {
-          estado: estadoSpan?.innerText.trim() || "",
-          tipoContribuyente: tds[0]?.innerText.trim() || "",
-          regimen: tds[1]?.innerText.trim() || "",
-        }
-      })
+    console.log(`📊 Consultando datos del contribuyente...`)
+    const contribuyenteResponse = await fetch(contribuyenteUrl, {
+      method: 'GET',
+      headers
     })
 
-    // Se extraen los datos de los establecimientos registrados
-    const establecimientos = await page.$$eval(".ui-datatable-data.ui-widget-content tr", (filas) => {
-      return filas.map((fila) => {
-        const columnas = fila.querySelectorAll("td")
-        return {
-          numEstablecimiento: columnas[0]?.innerText.trim() || "",
-          nombre: columnas[1]?.innerText.trim() || "",
-          ubicacion: columnas[2]?.innerText.trim() || "",
-          estado: columnas[3]?.innerText.trim() || "",
-        }
-      })
+    if (!contribuyenteResponse.ok) {
+      throw new Error(`Error HTTP en API contribuyente: ${contribuyenteResponse.status} - ${contribuyenteResponse.statusText}`)
+    }
+
+    const contribuyenteApiData = await contribuyenteResponse.json()
+    console.log(`✅ Datos del contribuyente obtenidos`)
+
+    console.log(`🏢 Consultando establecimientos...`)
+    const establecimientosResponse = await fetch(establecimientosUrl, {
+      method: 'GET',
+      headers
     })
 
-    console.log(`✅ Se encontraron datos del RUC ${ruc}`)
-    console.log(`   - Datos del contribuyente: ${datosContribuyente.length > 0 ? 'Encontrado' : 'No encontrado'}`)
-    console.log(`   - Establecimientos: ${establecimientos.length} encontrados`)
+    let establecimientosApiData = []
+    if (establecimientosResponse.ok) {
+      establecimientosApiData = await establecimientosResponse.json()
+      console.log(`✅ Datos de establecimientos obtenidos: ${establecimientosApiData.length} establecimientos`)
+    } else {
+      console.log(`⚠️ No se pudieron obtener datos de establecimientos (${establecimientosResponse.status})`)
+    }
 
-    // Verificar si se encontraron datos
-    if (datosContribuyente.length === 0 && establecimientos.length === 0) {
+    // Verificar si se encontraron datos del contribuyente
+    if (!contribuyenteApiData || contribuyenteApiData.length === 0) {
       console.log(`ℹ️ No se encontraron datos para el RUC ${ruc}.`)
       return {
         ruc,
@@ -84,10 +59,68 @@ export const obtenerDatosRuc = async (ruc) => {
       }
     }
 
+    const contribuyenteData = contribuyenteApiData[0]
+    
+    // Mapear los datos de la API al formato esperado por el sistema
+    const datosContribuyente = {
+      estado: contribuyenteData.estadoContribuyenteRuc || "",
+      tipoContribuyente: contribuyenteData.tipoContribuyente || "",
+      regimen: contribuyenteData.regimen || "",
+      razonSocial: contribuyenteData.razonSocial || "",
+      actividadEconomicaPrincipal: contribuyenteData.actividadEconomicaPrincipal || "",
+      categoria: contribuyenteData.categoria || "",
+      obligadoLlevarContabilidad: contribuyenteData.obligadoLlevarContabilidad || "",
+      agenteRetencion: contribuyenteData.agenteRetencion || "",
+      contribuyenteEspecial: contribuyenteData.contribuyenteEspecial || "",
+      contribuyenteFantasma: contribuyenteData.contribuyenteFantasma || "",
+      transaccionesInexistente: contribuyenteData.transaccionesInexistente || "",
+      fechaInicioActividades: contribuyenteData.informacionFechasContribuyente?.fechaInicioActividades || "",
+      fechaCese: contribuyenteData.informacionFechasContribuyente?.fechaCese || "",
+      fechaReinicioActividades: contribuyenteData.informacionFechasContribuyente?.fechaReinicioActividades || "",
+      fechaActualizacion: contribuyenteData.informacionFechasContribuyente?.fechaActualizacion || "",
+      representantesLegales: contribuyenteData.representantesLegales || null,
+      motivoCancelacionSuspension: contribuyenteData.motivoCancelacionSuspension || null
+    }
+
+    // Mapear establecimientos desde la API específica
+    let establecimientos = []
+    
+    if (establecimientosApiData && establecimientosApiData.length > 0) {
+      establecimientos = establecimientosApiData.map(est => ({
+        numEstablecimiento: est.numeroEstablecimiento || "",
+        nombre: est.nombreFantasiaComercial || contribuyenteData.razonSocial || "",
+        ubicacion: est.direccionCompleta || "",
+        estado: est.estado || "",
+        tipoEstablecimiento: est.tipoEstablecimiento || "",
+        esMatriz: est.matriz === "SI"
+      }))
+    } else {
+      // Fallback: crear establecimiento basado en datos del contribuyente
+      establecimientos = [{
+        numEstablecimiento: "001",
+        nombre: contribuyenteData.razonSocial || "",
+        ubicacion: "MATRIZ",
+        estado: contribuyenteData.estadoContribuyenteRuc || "",
+        tipoEstablecimiento: "MAT",
+        esMatriz: true
+      }]
+    }
+
+    console.log(`✅ Se encontraron datos del RUC ${ruc}`)
+    console.log(`   - Datos del contribuyente: Encontrado`)
+    console.log(`   - Razón Social: ${contribuyenteData.razonSocial}`)
+    console.log(`   - Estado: ${contribuyenteData.estadoContribuyenteRuc}`)
+    console.log(`   - Establecimientos: ${establecimientos.length} encontrados`)
+    
+    // Mostrar resumen de establecimientos
+    establecimientos.forEach(est => {
+      console.log(`     * Est. ${est.numEstablecimiento}: ${est.nombre} (${est.estado}) - ${est.esMatriz ? 'MATRIZ' : 'SUCURSAL'}`)
+    })
+
     const resultado = {
       ruc,
-      datosContribuyente: datosContribuyente[0] || {},
-      establecimientos: establecimientos,
+      datosContribuyente,
+      establecimientos,
       fechaConsulta: new Date(),
       estado: 'exitoso'
     }
@@ -143,7 +176,5 @@ export const obtenerDatosRuc = async (ruc) => {
     ).catch(err => console.warn('⚠️ Error guardando log:', err.message));
     
     throw new Error(`Error al consultar SRI: ${error.message}`)
-  } finally {
-    await browser.close()
   }
 }
