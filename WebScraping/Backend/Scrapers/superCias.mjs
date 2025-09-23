@@ -19,7 +19,7 @@ export const obtenerSuperciasEmpresas = async (cedulaRuc) => {
     console.log(`� SuperCías - Lanzando navegador...`)
 
     browser = await chromium.launch({ 
-      headless: false,
+      headless: true,
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',

@@ -36,7 +36,7 @@ export function ProcesosJudicialesPage() {
   const [procesosData, setProcesosData] = useState<ProcesosJudicialesData | null>(null)
   const [showCards, setShowCards] = useState(false)
   const [noResults, setNoResults] = useState(false)
-  const [vncWindow, setVncWindow] = useState<Window | null>(null)
+  // Eliminado: const [vncWindow, setVncWindow] = useState<Window | null>(null)
 
   const {
     register,
@@ -44,15 +44,7 @@ export function ProcesosJudicialesPage() {
     formState: { errors },
   } = useForm<FormData>()
 
-  useEffect(() => {
-    if (!isLoading && vncWindow && !vncWindow.closed) {
-      const timer = setTimeout(() => {
-        vncWindow.close()
-        setVncWindow(null)
-      }, 2000)
-      return () => clearTimeout(timer)
-    }
-  }, [isLoading, vncWindow])
+  // Eliminado: useEffect para cerrar ventana VNC
 
   const onSubmit = async (data: FormData) => {
     setIsLoading(true)
@@ -312,11 +304,6 @@ export function ProcesosJudicialesPage() {
                   type="submit"
                   className="w-full"
                   disabled={isLoading}
-                  onClick={() => {
-                    const vncUrl = `${import.meta.env.VITE_VNC_URL || 'http://localhost:6080'}/vnc.html`
-                    const newWindow = window.open(vncUrl, "_blank")
-                    setVncWindow(newWindow)
-                  }}
                 >
                   {isLoading ? "Consultando... (Esto puede tomar unos segundos)" : "Consultar"}
                 </Button>
