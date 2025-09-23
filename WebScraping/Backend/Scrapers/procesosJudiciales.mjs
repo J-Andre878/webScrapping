@@ -106,108 +106,17 @@ async function consultarProcesosAPI(cedula) {
   }
 }
 
-// Función fallback usando Playwright (método original)
-async function consultarProcesosPlaywright(cedula) {
-  console.log(`🎭 Usando Playwright como fallback...`)
-  
-  const { chromium } = await import("playwright")
-  
-  const browser = await chromium.launch({ 
-    headless: false,
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--disable-gpu'
-    ]
-  })
-  const page = await browser.newPage()
-
-  try {
-    console.log(`🌐 Navegando a página de procesos judiciales...`)
-    await page.goto("https://procesosjudiciales.funcionjudicial.gob.ec/busqueda-filtros", {
-      waitUntil: "domcontentloaded",
-      timeout: 30000
-    })
-    
-    console.log(`📄 Página cargada. Título: ${await page.title()}`)
-    
-    console.log(`📝 Ingresando cédula: ${cedula}`)
-    
-    let resultadosActor = []
-    let resultadosDemandado = []
-
-    console.log(`🔍 Buscando como actor...`)
-    // Rellenamos el campo de cédula
-    await page.type('input[formcontrolname="cedulaActor"]', cedula)    
-    // Se le da click al botón de buscar
-    await page.waitForSelector('.boton-buscar:not([disabled])', { timeout: 5000 })
-    await page.click('.boton-buscar')
-    
-    // Espera hasta que aparezca la primera etiqueta que tiene la clase cuerpo o la que tiene la clase mat-mdc-simple-snack-bar
-    const estadoActor = await Promise.race([
-      page.waitForSelector('.mat-mdc-simple-snack-bar.ng-star-inserted', { timeout: 60000 }).then(() => 'no_resultados'),
-      page.waitForSelector('.cuerpo', { timeout: 60000 }).then(() => 'ok'),
-    ])
-
-    //Si se encontró la etiqueta que tiene la clase mat-mdc-simple-snack-bar PRIMERO (No se encontraron resultados)
-    if (estadoActor === 'no_resultados') {
-      console.log(`ℹ️ No hay procesos judiciales registrados para la cédula ${cedula}`)
-    } else {
-      resultadosActor = await extraerDatos(page) //Función para extraer los datos de la página
-      // Se le da click al boton de regresar para buscar por demandado
-      await page.click('.botones.btn-regresar.mdc-button')
-    }
-
-    // Rellenamos el campo de cédula
-    await page.fill('input[formcontrolname="cedulaDemandado"]', cedula)
-    // Se le da click al botón de buscar
-    await page.waitForSelector('.boton-buscar:not([disabled])', { timeout: 5000 })
-    await page.click('.boton-buscar')
-    
-    // Espera hasta que aparezca la primera etiqueta que tiene la clase cuerpo o la que tiene la clase mat-mdc-simple-snack-bar
-    const estadoDemandado = await Promise.race([
-      page.waitForSelector('.mat-mdc-simple-snack-bar.ng-star-inserted', { timeout: 60000 }).then(() => 'no_resultados'),
-      page.waitForSelector('.cuerpo', { timeout: 60000 }).then(() => 'ok'),
-    ])
-
-    //Si se encontró la etiqueta que tiene la clase mat-mdc-simple-snack-bar PRIMERO (No se encontraron resultados)
-    if (estadoDemandado === 'no_resultados') {
-      console.log(`ℹ️ No hay procesos judiciales registrados para la cédula ${cedula}`)
-    } else {
-      resultadosDemandado = await extraerDatos(page) //Función para extraer los datos de la página
-    }
-
-    return { resultadosActor, resultadosDemandado, metodo: 'Playwright' }
-
-  } finally {
-    await browser.close()
-  }
-}
-
 export const obtenerProcesosJudiciales = async (cedula) => {
   console.log(`🔍 Iniciando consulta de procesos judiciales para cédula: ${cedula}`)
   
   try {
-    // Intentar primero con API
+    // Intentar solo con API
     console.log(`🌐 Intentando método API directo...`)
     const resultadoAPI = await consultarProcesosAPI(cedula)
-    
     let { resultadosActor, resultadosDemandado } = resultadoAPI
-    let metodoUsado = 'API'
-
-    // Si API no funciona o no encuentra datos, usar Playwright como fallback
-    if (resultadosActor.length === 0 && resultadosDemandado.length === 0) {
-      console.log(`🔄 API no retornó datos, intentando con Playwright...`)
-      const resultadoPlaywright = await consultarProcesosPlaywright(cedula)
-      resultadosActor = resultadoPlaywright.resultadosActor
-      resultadosDemandado = resultadoPlaywright.resultadosDemandado
-      metodoUsado = 'Playwright'
-    }
-
     const resultados = [...resultadosActor, ...resultadosDemandado]
 
-    console.log(`✅ Se encontraron ${resultadosActor.length} procesos como actor y ${resultadosDemandado.length} como demandado (${metodoUsado})`)
+    console.log(`✅ Se encontraron ${resultadosActor.length} procesos como actor y ${resultadosDemandado.length} como demandado`)
 
     // Guardar en base de datos usando el modelo
     if (resultadosActor.length > 0 || resultadosDemandado.length > 0) {

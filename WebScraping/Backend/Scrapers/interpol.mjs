@@ -68,143 +68,13 @@ async function consultarInterpolAPI(nombre, apellido) {
   }
 }
 
-// Función fallback usando Playwright (método original)
-async function consultarInterpolPlaywright(nombre, apellido) {
-  console.log(`🎭 Usando Playwright como fallback...`)
-  
-  const { chromium } = await import("playwright")
-  
-  const browser = await chromium.launch({ 
-    headless: false,  
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--disable-gpu',
-      '--display=:99'  
-    ]
-  })
-  const page = await browser.newPage()
-
-  try {
-    console.log(`🌐 Navegando a página de Interpol...`)
-    await page.goto("https://www.interpol.int/es/Como-trabajamos/Notificaciones/Notificaciones-rojas/Ver-las-notificaciones-rojas", {
-      waitUntil: "domcontentloaded",
-      timeout: 30000
-    })
-    
-    console.log(`📄 Página cargada. Título: ${await page.title()}`)
-    console.log(`📝 Ingresando datos de búsqueda...`)
-
-    await page.waitForSelector("#forename");
-    await page.type("#forename", nombre);
-    await page.type("#name", apellido);
-    await page.click("#submit");
-
-    await page.waitForTimeout(1000);
-
-    // Verificar si no hay resultados
-    const noResults = await page.evaluate(() => {
-      const noResultsElement = document.querySelector("#noSearchResults");
-      if (noResultsElement) {
-        const style = window.getComputedStyle(noResultsElement);
-        const isVisible = style.display !== "none" && !noResultsElement.classList.contains("hidden");
-        return isVisible;
-      }
-      return false;
-    });
-
-    if (noResults) {
-      console.log(`ℹ️ No se encontraron resultados en Playwright`)
-      return { avisos: [], total: 0, metodo: 'Playwright' }
-    }
-
-    const vistos = new Set();
-    const avisosTotales = [];
-
-    async function leerAvisosVisibles() {
-      const locator = page.locator(".redNoticesList__item.notice_red");
-      const cuenta = await locator.count();
-      const lista = [];
-
-      for (let i = 0; i < cuenta; i++) {
-        const item = locator.nth(i);
-        if (!(await item.isVisible())) continue;
-
-        const nombreTexto = await item.locator(".redNoticeItem__labelLink").innerText().catch(() => null);
-        const edad = await item.locator(".ageCount").innerText().catch(() => null);
-        const nacionalidad = await item.locator(".nationalities").innerText().catch(() => null);
-
-        const obj = {
-          nombre: nombreTexto ? nombreTexto.trim().replace(/\n/g, " ") : null,
-          edad: edad ? edad.trim() : null,
-          nacionalidad: nacionalidad ? nacionalidad.trim() : null,
-          fuente: "interpol"
-        };
-
-        const clave = `${obj.nombre}||${obj.nacionalidad}||${obj.edad}`;
-        if (!vistos.has(clave)) {
-          vistos.add(clave);
-          lista.push(obj);
-        }
-      }
-
-      return lista;
-    }
-
-    // Leer avisos iniciales
-    let avisos = await leerAvisosVisibles();
-    avisosTotales.push(...avisos);
-
-    // Intentar cargar más páginas
-    let iteraciones = 0;
-    const maxIteraciones = 10;
-
-    while (iteraciones < maxIteraciones) {
-      try {
-        const botonSiguiente = await page.locator("button[aria-label='Ver más resultados']").first();
-        if (!(await botonSiguiente.isVisible())) break;
-
-        await botonSiguiente.click();
-        await page.waitForTimeout(2000);
-
-        avisos = await leerAvisosVisibles();
-        avisosTotales.push(...avisos);
-
-        iteraciones++;
-      } catch (error) {
-        console.log("No se pudo cargar más páginas:", error.message);
-        break;
-      }
-    }
-
-    console.log(`✅ Playwright encontró ${avisosTotales.length} avisos únicos`)
-    return { avisos: avisosTotales, total: avisosTotales.length, metodo: 'Playwright' }
-
-  } finally {
-    await browser.close()
-  }
-}
-
 export const obtenerInterpol = async (nombre, apellido) => {
   console.log(`🔍 Iniciando consulta Interpol para: ${nombre} ${apellido}`)
   
   try {
-    // Intentar primero con API
-    console.log(`🌐 Intentando método API directo...`)
+    // Intentar solo con API
     const resultadoAPI = await consultarInterpolAPI(nombre, apellido)
-    
     let { avisos, total } = resultadoAPI
-    let metodoUsado = 'API'
-
-    // Si API no funciona o no encuentra datos, usar Playwright como fallback
-    if (avisos.length === 0) {
-      console.log(`🔄 API no retornó datos, intentando con Playwright...`)
-      const resultadoPlaywright = await consultarInterpolPlaywright(nombre, apellido)
-      avisos = resultadoPlaywright.avisos
-      total = resultadoPlaywright.total
-      metodoUsado = 'Playwright'
-    }
 
     // Preparar datos para el retorno
     const claveBusqueda = `${nombre.trim()} ${apellido.trim()}`.trim();
@@ -212,7 +82,7 @@ export const obtenerInterpol = async (nombre, apellido) => {
     const homonimo = avisos.length > 0; // TRUE si encontró avisos, FALSE si no encontró
     const fechaConsulta = new Date();
 
-    console.log(`✅ Se encontraron ${cantidadResultados} avisos de Interpol (${metodoUsado})`)
+    console.log(`✅ Se encontraron ${cantidadResultados} avisos de Interpol (API)`)
     console.log(`📊 Homónimo: ${homonimo ? 'SÍ' : 'NO'} - Cantidad: ${cantidadResultados}`)
 
     // Datos para la base de datos (SIN avisos, solo estadísticas)
@@ -245,7 +115,7 @@ export const obtenerInterpol = async (nombre, apellido) => {
       homonimo,
       fechaConsulta,
       avisos: avisos, // Enviado a la interfaz para mostrar, NO guardado en BD
-      metodoUsado
+      metodoUsado: 'API'
     };
 
   } catch (error) {
