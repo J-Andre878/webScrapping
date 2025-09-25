@@ -45,36 +45,9 @@ export function AntecedentesPenalesPage() {
     }
   }, [isLoading, vncWindow])
 
-  const onSubmit = async (data: FormData) => {
-    setIsLoading(true)
-    setShowResult(false)
-    setAntecedentesPenalesData(null)
-    setError(null)
-
-    try {
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ;
-      const response = await fetch(`${apiBaseUrl}/api/antecedentes-penales`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ cedula: data.cedula }),
-      })
-
-      const resultado = await response.json()
-
-      if (resultado.success) {
-        setAntecedentesPenalesData(resultado.data)
-        setShowResult(true)
-      } else {
-        setError(resultado.message || "Ocurrió un error, por favor intenta más tarde.")
-      }
-    } catch (error) {
-      console.error("Error al consultar antecedentes penales:", error)
-      setError("Error de conexión con el servidor")
-    } finally {
-      setIsLoading(false)
-    }
+  // Servicio deshabilitado por captcha
+  const onSubmit = () => {
+    setError('Este servicio está deshabilitado temporalmente porque requiere la resolución de un captcha visual.');
   }
 
   const ResultCard = ({ data }: { data: AntecedentesPenalesData }) => (
@@ -221,16 +194,12 @@ export function AntecedentesPenalesPage() {
                   </div>
                 </div>
                 <Button
-                  type="submit"
+                  type="button"
                   className="w-full"
-                  disabled={isLoading}
-                  onClick={() => {
-                    const vncUrl = `${import.meta.env.VITE_VNC_URL || 'http://localhost:6080'}/vnc.html`
-                    const newWindow = window.open(vncUrl, "_blank")
-                    setVncWindow(newWindow)
-                  }}
+                  disabled
+                  style={{ opacity: 0.7, cursor: 'not-allowed' }}
                 >
-                  {isLoading ? "Consultando..." : "Consultar Antecedentes"}
+                  Servicio deshabilitado por captcha
                 </Button>
               </form>
             </CardContent>

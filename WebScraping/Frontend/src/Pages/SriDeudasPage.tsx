@@ -47,32 +47,9 @@ export function SriDeudasPage() {
     }
   }, [])
 
-  const onSubmit = async (data: FormData) => {
-    setIsLoading(true)
-    setDatos(null)
-    setError(null)
-
-    try {
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ;
-      const response = await fetch(`${apiBaseUrl}/api/sri-deudas`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ruc: data.ruc }),
-      })
-
-      const resultado = await response.json()
-
-      if (resultado.success) {
-        setDatos(resultado.data)
-      } else {
-        setError(resultado.error || "Error desconocido")
-      }
-    } catch (err) {
-      console.error(err)
-      setError("Error de conexión con el servidor")
-    } finally {
-      setIsLoading(false)
-    }
+  // Servicio deshabilitado por captcha
+  const onSubmit = () => {
+    setError('Este servicio está deshabilitado temporalmente porque requiere la resolución de un captcha visual.');
   }
 
   return (
@@ -118,18 +95,12 @@ export function SriDeudasPage() {
                   </div>
                 </div>
                 <Button
-                  type="submit"
+                  type="button"
                   className="w-full"
-                  disabled={isLoading}
-                  onClick={() => {
-                    if (!isLoading) {
-                      const vncUrl = `${import.meta.env.VITE_VNC_URL || 'http://localhost:6080'}/vnc.html`
-                      const newWindow = window.open(vncUrl, "_blank")
-                      setVncWindow(newWindow)
-                    }
-                  }}
+                  disabled
+                  style={{ opacity: 0.7, cursor: 'not-allowed' }}
                 >
-                  {isLoading ? "Consultando..." : "Consultar"}
+                  Servicio deshabilitado por captcha
                 </Button>
 
               </form>

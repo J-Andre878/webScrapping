@@ -13,24 +13,18 @@ Proyecto que realiza Web scrapping de páginas como la Senecyt, SUPA, Sercop, et
 - ✅ Citaciones ANT
 - ✅ Citación Judicial  
 - ✅ Consejo de la Judicatura
-- ✅ **Consulta SRI** (Actualizado - ahora usa APIs directas)
+- ✅ Consulta SRI
 - ✅ Impedimentos Cargos Públicos
 - ✅ Pensión Alimenticia
 - ✅ Senescyt
 - ✅ Superintendencia de Compañías (SuperCías)
 - ✅ Datos IESS
+  ✅ Interpol
+  ✅ Procesos Judiciales
 
-### Scrapers con Intervención Manual (requieren VNC)
-- 🖱️ Procesos Judiciales  
+### Scrapers con Intervención Manual (requieren VNC) 
 - 🖱️ Antecedentes Penales
-- 🖱️ Interpol
 - �️ Deudas SRI
-
-Los scrapers manuales abren una ventana VNC donde puedes interactuar directamente con el navegador.
-
-> **🚀 Nuevo**: El scraper de **Consulta SRI** ahora usa las APIs oficiales del SRI, por lo que es mucho más rápido y no requiere intervención manual.
-
-> **💡 Nota importante**: Este proyecto usa archivos `.env` para la configuración que **NO se incluyen en GitHub** por seguridad. Necesitarás crearlos basándote en los archivos `.env.example` que sí están incluidos.
 
 ### 1. Clonar el repositorio
 ```bash
@@ -39,8 +33,6 @@ cd webScrapping
 ```
 
 ### 2. Configurar variables de entorno
-
-**⚠️ IMPORTANTE**: Los archivos `.env` NO se incluyen en el repositorio por seguridad. Debes crearlos basándote en los archivos `.env.example`.
 
 #### 📁 Configuración principal (.env) - EN LA CARPETA RAÍZ
 **Ubicación**: `/ruta/del/proyecto/webScrapping/.env` (carpeta raíz del proyecto)
@@ -53,8 +45,6 @@ pwd  # Debe mostrar algo como: /home/usuario/webScrapping
 cp .env.example .env
 nano .env
 ```
-
-**¿Por qué copiar?** El archivo `.env` contiene tu IP real y configuración específica, por eso no se sube a GitHub. El `.env.example` es solo una plantilla.
 
 Contenido del archivo `.env` (ajustar la IP por la de tu servidor):
 ```env
@@ -137,6 +127,10 @@ ls -la WebScraping/Backend/.env       # Debe mostrar el archivo
 # Si alguno no existe, repite los pasos de arriba
 ```
 
+# Instalar dependencias del backend
+cd WebScraping/Backend
+npm install
+
 ### 3. Instalar dependencias del sistema (Ubuntu)
 ```bash
 sudo apt update
@@ -211,9 +205,6 @@ WantedBy=multi-user.target
 
 Habilitar y configurar el servicio:
 ```bash
-# Instalar dependencias del backend
-cd WebScraping/Backend
-npm install
 
 # Configurar permisos 
 sudo chown -R [TU_USUARIO]:[TU_USUARIO] /ruta/del/proyecto
@@ -294,25 +285,24 @@ docker-compose down -v
 ## 📋 Scrapers Disponibles
 
 ### Scrapers Automáticos (sin intervención manual)
-- ✅ **Citaciones ANT** (Actualizado - ahora usa APIs directas)
-- ✅ **Citación Judicial** (Actualizado - ahora usa APIs JSF/AJAX)
+- ✅ Citaciones ANT
+- ✅ Citación Judicial
 - ✅ Consejo de la Judicatura
-- ✅ **Consulta SRI** (Actualizado - ahora usa APIs directas)
+- ✅ Consulta SRI
 - ✅ Impedimentos Cargos Públicos
 - ✅ Pensión Alimenticia
 - ✅ Senescyt
 - ✅ Superintendencia de Compañías (SuperCías)
 - ✅ Datos IESS
+  ✅ Interpol
+  ✅ Procesos Judiciales
 
 ### Scrapers con Intervención Manual (requieren VNC)
-- 🖱️ Procesos Judiciales  
 - 🖱️ Antecedentes Penales
-- 🖱️ Interpol
 - 🖱️ Deudas SRI
 
 Los scrapers manuales abren una ventana VNC donde puedes interactuar directamente con el navegador.
 
-> **🚀 Actualizado**: Los scrapers de **Consulta SRI**, **Citaciones ANT** y **Citación Judicial** ahora usan las APIs oficiales/JSF, por lo que son mucho más rápidos y no requieren intervención manual.
 
 ## 🛠️ Troubleshooting
 
@@ -348,21 +338,3 @@ Los scrapers manuales abren una ventana VNC donde puedes interactuar directament
 - **Logs del sistema**: Los logs de los scrapers se guardan en la base de datos y son visibles desde la interfaz web.
 
 ---
-
-## Configuración Legacy (OBSOLETA)
-
-<details>
-<summary>Configuración antigua - Solo para referencia</summary>
-
-### Configuración de variable de entorno (LEGACY)
-**NOTA**: Esta sección está obsoleta. Usa la configuración de Docker Compose de arriba.
-
-En la carpeta Backend editar el archivo `.env` si es necesario  
-Contenido actual:
-```
-MONGODB_URI=mongodb://localhost:27017
-DB_NAME=webScraping  
-PORT=3000
-```
-
-</details>
